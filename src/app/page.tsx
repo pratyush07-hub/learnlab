@@ -211,50 +211,50 @@ export default function HomePage() {
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-16 lg:pt-24 lg:pb-20">
+      <section className="relative overflow-hidden pt-16 pb-12 sm:pt-20 sm:pb-16 lg:pt-24 lg:pb-20">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-amber-50/30"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="space-y-8"
+              className="space-y-6 sm:space-y-8 text-center lg:text-left"
             >
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="inline-flex items-center bg-amber-50 text-amber-700 px-4 py-2 rounded-full text-sm font-medium border border-amber-200/50"
+                  className="inline-flex items-center bg-amber-50 text-amber-700 px-3 py-2 sm:px-4 rounded-full text-xs sm:text-sm font-medium border border-amber-200/50"
                   style={{ 
                     background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 146, 60, 0.1) 100%)',
                     backdropFilter: 'blur(10px)'
                   }}
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   Expert Research Mentorship Platform
                 </motion.div>
                 
-                <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
+                <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
                   Connect with
                   <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent block">
                     Research Mentors
                   </span>
-                  <span className="text-3xl lg:text-4xl text-gray-600 block mt-2 font-medium">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl text-gray-600 block mt-1 sm:mt-2 font-medium">
                     Book Your Free Session
                   </span>
                 </h1>
                 
-                <p className="text-lg text-gray-600 leading-relaxed max-w-xl">
+                <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-xl mx-auto lg:mx-0">
                   Get personalized guidance from world-class research mentors. Start with a free 5-minute consultation to find your perfect mentor match and accelerate your research journey.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <motion.button
                   onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-7 py-3.5 rounded-2xl font-semibold text-base hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center"
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 sm:px-7 sm:py-3.5 rounded-2xl font-semibold text-sm sm:text-base hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center"
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ 
@@ -263,11 +263,11 @@ export default function HomePage() {
                   }}
                 >
                   Book Free Session (5 min)
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                 </motion.button>
                 
                 <motion.button
-                  className="border border-gray-300 text-gray-700 px-7 py-3.5 rounded-2xl font-semibold text-base hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 flex items-center justify-center backdrop-blur-sm"
+                  className="border border-gray-300 text-gray-700 px-6 py-3 sm:px-7 sm:py-3.5 rounded-2xl font-semibold text-sm sm:text-base hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 flex items-center justify-center backdrop-blur-sm"
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   style={{ 
@@ -275,27 +275,27 @@ export default function HomePage() {
                     backdropFilter: 'blur(10px)'
                   }}
                 >
-                  <Play className="mr-2 h-4 w-4" />
+                  <Play className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   View Mentors
                 </motion.button>
               </div>
 
-              <div className="flex items-center space-x-6 pt-4">
-                <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-3 sm:space-y-0 pt-4 text-center lg:text-left">
+                <div className="flex items-center justify-center lg:justify-start space-x-3">
                   <div className="flex -space-x-2">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full border-2 border-white flex items-center justify-center text-white font-medium text-xs shadow-sm">
+                      <div key={i} className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full border-2 border-white flex items-center justify-center text-white font-medium text-xs shadow-sm">
                         {String.fromCharCode(64 + i)}
                       </div>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-500 ml-2">500+ mentors available</span>
+                  <span className="text-xs sm:text-sm text-gray-500 ml-2">500+ mentors available</span>
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center justify-center lg:justify-start space-x-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-4 h-4 text-amber-400 fill-current" />
+                    <Star key={star} className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400 fill-current" />
                   ))}
-                  <span className="text-sm text-gray-500 ml-1">4.9/5 rating</span>
+                  <span className="text-xs sm:text-sm text-gray-500 ml-1">4.9/5 rating</span>
                 </div>
               </div>
             </motion.div>
@@ -304,10 +304,10 @@ export default function HomePage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="relative"
+              className="relative mt-8 lg:mt-0"
             >
               <div 
-                className="bg-white/80 rounded-3xl p-6 shadow-xl border border-gray-200/50"
+                className="bg-white/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-gray-200/50"
                 style={{ 
                   background: 'rgba(255, 255, 255, 0.9)',
                   backdropFilter: 'blur(20px)',
@@ -315,7 +315,7 @@ export default function HomePage() {
                 }}
               >
                 <div 
-                  className="bg-gradient-to-br from-amber-50/80 to-orange-50/80 rounded-2xl p-5 border border-amber-100/50"
+                  className="bg-gradient-to-br from-amber-50/80 to-orange-50/80 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-100/50"
                   style={{ backdropFilter: 'blur(10px)' }}
                 >
                   <div className="space-y-5">
