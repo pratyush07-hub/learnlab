@@ -176,7 +176,7 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
   const totalEarnings = earnings.reduce((sum, earning) => sum + earning.amount, 0);
   const pendingEarnings = earnings.filter(e => e.status === 'pending').reduce((sum, earning) => sum + earning.amount, 0);
   const completedSessions = sessions.filter(s => s.status === 'completed').length;
-  const upcomingSessions = sessions.filter(s => s.status === 'scheduled' && new Date(s.date) >= new Date()).length;
+  const upcomingSessions = sessions.filter(s => s.status === 'scheduled' && new Date(s.session_date) >= new Date()).length;
 
   if (loading) {
     return (
@@ -341,7 +341,7 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
                           <div>
                             <p className="font-medium text-gray-900">{session.subject}</p>
                             <p className="text-sm text-gray-600">
-                              with {session.student?.name} • {new Date(session.date).toLocaleDateString()} at {session.time}
+                              with {session.student?.name} • {new Date(session.session_date).toLocaleDateString()} at {session.session_time}
                             </p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -454,7 +454,7 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
                             <div>
                               <p className="font-medium text-gray-900">{session.subject}</p>
                               <p className="text-sm text-gray-600">
-                                with {session.student?.name} • {new Date(session.date).toLocaleDateString()} at {session.time}
+                                with {session.student?.name} • {new Date(session.session_date).toLocaleDateString()} at {session.session_time}
                               </p>
                               <p className="text-sm text-gray-500">Duration: {session.duration} minutes</p>
                             </div>

@@ -228,7 +228,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
   });
 
   const upcomingSessions = sessions.filter(session => 
-    session.status === 'scheduled' && new Date(session.date) >= new Date()
+    session.status === 'scheduled' && new Date(session.session_date) >= new Date()
   );
 
   if (loading) {
@@ -379,7 +379,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
                         <div>
                           <p className="font-medium text-gray-900">{session.subject}</p>
                           <p className="text-sm text-gray-600">
-                            with {session.mentor?.name} • {new Date(session.date).toLocaleDateString()} at {session.time}
+                            with {session.mentor?.name} • {new Date(session.session_date).toLocaleDateString()} at {session.session_time}
                           </p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -507,7 +507,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
                             <div>
                               <p className="font-medium text-gray-900">{session.subject}</p>
                               <p className="text-sm text-gray-600">
-                                with {session.mentor?.name} • {new Date(session.date).toLocaleDateString()} at {session.time}
+                                with {session.mentor?.name} • {new Date(session.session_date).toLocaleDateString()} at {session.session_time}
                               </p>
                               <p className="text-sm text-gray-500">Duration: {session.duration} minutes</p>
                             </div>
