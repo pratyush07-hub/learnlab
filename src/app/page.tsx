@@ -399,12 +399,12 @@ export default function HomePage() {
                 Research Success
               </span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
               From free consultation to program completion - we guide you every step of the way
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               {
                 icon: Users,
@@ -455,7 +455,7 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="group relative rounded-3xl p-6 transition-all duration-500 hover:scale-[1.02]"
+                className="group relative rounded-2xl sm:rounded-3xl p-4 sm:p-6 transition-all duration-500 hover:scale-[1.02]"
                 whileHover={{ y: -4 }}
                 style={{ 
                   background: 'rgba(255, 255, 255, 0.9)',
@@ -464,18 +464,18 @@ export default function HomePage() {
                   border: '1px solid rgba(255, 255, 255, 0.2)'
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-50/30 to-orange-50/30 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-50/30 to-orange-50/30 rounded-2xl sm:rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div className="relative">
                   <div 
-                    className={`w-12 h-12 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${feature.color} rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-5 group-hover:scale-110 transition-transform duration-300`}
                     style={{ boxShadow: '0 4px 16px rgba(245, 158, 11, 0.3)' }}
                   >
-                    <feature.icon className="w-6 h-6 text-white" />
+                    <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{feature.title}</h3>
+                  <div className="flex justify-between items-start mb-2 sm:mb-3">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">{feature.title}</h3>
                     <span 
-                      className="text-xs font-medium text-amber-700 px-2.5 py-1 rounded-full"
+                      className="text-xs font-medium text-amber-700 px-2 py-1 sm:px-2.5 rounded-full flex-shrink-0 ml-2"
                       style={{ 
                         background: 'rgba(251, 191, 36, 0.1)',
                         backdropFilter: 'blur(10px)'
@@ -484,7 +484,7 @@ export default function HomePage() {
                       {feature.stats}
                     </span>
                   </div>
-                  <p className="text-gray-600 leading-relaxed text-sm">{feature.description}</p>
+                  <p className="text-gray-600 leading-relaxed text-xs sm:text-sm">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -492,26 +492,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-16 lg:py-20 bg-white">
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
               How LearnLab
               <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent"> Works</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Simple 4-step process to connect with mentors and accelerate your research
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+              Simple 3-step process to connect with mentors and accelerate your research
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 step: "01",
@@ -541,7 +540,7 @@ export default function HomePage() {
                 className="relative text-center"
               >
                 <div 
-                  className="rounded-3xl p-8 transition-all duration-500 hover:scale-[1.02]"
+                  className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 transition-all duration-500 hover:scale-[1.02]"
                   style={{ 
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(20px)',
@@ -549,25 +548,25 @@ export default function HomePage() {
                     border: '1px solid rgba(255, 255, 255, 0.2)'
                   }}
                 >
-                  <div className="relative mb-6">
+                  <div className="relative mb-4 sm:mb-6">
                     <div 
-                      className="w-16 h-16 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mx-auto transition-transform duration-300 hover:scale-110"
+                      className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto transition-transform duration-300 hover:scale-110"
                       style={{ boxShadow: '0 8px 24px rgba(245, 158, 11, 0.3)' }}
                     >
-                      <step.icon className="w-8 h-8 text-white" />
+                      <step.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                     </div>
                     <div 
-                      className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-yellow-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-gradient-to-r from-orange-500 to-yellow-500 text-white w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold"
                       style={{ boxShadow: '0 4px 12px rgba(251, 146, 60, 0.4)' }}
                     >
                       {step.step}
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{step.description}</p>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">{step.title}</h3>
+                  <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{step.description}</p>
                 </div>
                 {index < 2 && (
-                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
+                  <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
                     <ChevronRight className="w-6 h-6 text-amber-300" />
                   </div>
                 )}
@@ -575,10 +574,10 @@ export default function HomePage() {
             ))}
           </div>
           
-          {/* Additional Step */}
-          <div className="mt-12 text-center">
+          {/* Additional CTA */}
+          <div className="mt-8 sm:mt-12 text-center">
             <div 
-              className="inline-block rounded-3xl p-8 transition-all duration-500"
+              className="inline-block rounded-2xl sm:rounded-3xl p-6 sm:p-8 transition-all duration-500"
               style={{ 
                 background: 'rgba(255, 255, 255, 0.9)',
                 backdropFilter: 'blur(20px)',
@@ -604,23 +603,23 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-16 lg:py-20 bg-gray-50/50">
+      <section id="testimonials" className="py-12 sm:py-16 lg:py-20 bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
               Success Stories from
               <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent block"> Our Students</span>
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Join thousands of students who've accelerated their research journey with expert mentorship</p>
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">Join thousands of students who've accelerated their research journey with expert mentorship</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               {
                 name: "Sarah Chen",

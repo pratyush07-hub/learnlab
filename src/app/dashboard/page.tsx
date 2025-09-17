@@ -31,35 +31,58 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold gradient-text">LearnLab</h1>
-              <span className="text-gray-400">|</span>
-              <span className="text-gray-600">Student Dashboard</span>
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <h1 className="text-xl sm:text-2xl font-bold gradient-text">LearnLab</h1>
+              <span className="text-gray-400 hidden sm:inline">|</span>
+              <span className="text-gray-600 text-sm sm:text-base hidden sm:inline">Student Dashboard</span>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button className="relative p-2 text-gray-600 hover:text-orange-500 transition-colors">
-                <Bell size={20} />
-                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <Bell size={18} className="sm:w-5 sm:h-5" />
+                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs">
                   3
                 </span>
               </button>
               <button className="p-2 text-gray-600 hover:text-orange-500 transition-colors">
-                <Settings size={20} />
+                <Settings size={18} className="sm:w-5 sm:h-5" />
               </button>
               <button className="p-2 text-gray-600 hover:text-red-500 transition-colors">
-                <LogOut size={20} />
+                <LogOut size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+          {/* Mobile Tab Navigation */}
+          <div className="lg:hidden overflow-x-auto mb-4">
+            <div className="flex space-x-2 min-w-max px-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-all whitespace-nowrap ${
+                      activeTab === tab.id
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span className="text-xs font-medium">{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="premium-card p-6 rounded-3xl space-y-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon
@@ -82,7 +105,7 @@ export default function StudentDashboard() {
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 lg:col-span-4">
             {activeTab === 'overview' && <DashboardOverview />}
             {activeTab === 'mentors' && <FindMentors />}
             {activeTab === 'projects' && <MyProjects />}
@@ -99,62 +122,62 @@ export default function StudentDashboard() {
 // Dashboard Overview Component
 function DashboardOverview() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h2 className="text-3xl font-bold mb-2">Welcome back, Alex! 👋</h2>
-        <p className="text-gray-600">Here's your research progress overview</p>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, Alex! 👋</h2>
+        <p className="text-gray-600 text-sm sm:text-base">Here's your research progress overview</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <motion.div 
           whileHover={{ y: -5 }}
-          className="premium-card p-6 rounded-3xl"
+          className="premium-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Active Projects</p>
-              <p className="text-3xl font-bold gradient-text">3</p>
+              <p className="text-gray-600 text-xs sm:text-sm">Active Projects</p>
+              <p className="text-2xl sm:text-3xl font-bold gradient-text">3</p>
             </div>
-            <BookOpen className="text-orange-500" size={32} />
+            <BookOpen className="text-orange-500" size={24} />
           </div>
         </motion.div>
 
         <motion.div 
           whileHover={{ y: -5 }}
-          className="premium-card p-6 rounded-3xl"
+          className="premium-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Mentor Sessions</p>
-              <p className="text-3xl font-bold gradient-text">12</p>
+              <p className="text-gray-600 text-xs sm:text-sm">Mentor Sessions</p>
+              <p className="text-2xl sm:text-3xl font-bold gradient-text">12</p>
             </div>
-            <Calendar className="text-orange-500" size={32} />
+            <Calendar className="text-orange-500" size={24} />
           </div>
         </motion.div>
 
         <motion.div 
           whileHover={{ y: -5 }}
-          className="premium-card p-6 rounded-3xl"
+          className="premium-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Achievement Score</p>
-              <p className="text-3xl font-bold gradient-text">85%</p>
+              <p className="text-gray-600 text-xs sm:text-sm">Achievement Score</p>
+              <p className="text-2xl sm:text-3xl font-bold gradient-text">85%</p>
             </div>
-            <Star className="text-orange-500" size={32} />
+            <Star className="text-orange-500" size={24} />
           </div>
         </motion.div>
       </div>
 
       {/* Recent Activity */}
-      <div className="premium-card p-6 rounded-3xl">
-        <h3 className="text-xl font-bold mb-4">Recent Activity</h3>
-        <div className="space-y-4">
-          <div className="flex items-start space-x-4">
-            <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
-            <div>
-              <p className="font-medium">Session with Dr. Sarah Chen completed</p>
+      <div className="premium-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl">
+        <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Recent Activity</h3>
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex items-start space-x-3 sm:space-x-4">
+            <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm sm:text-base">Session with Dr. Sarah Chen completed</p>
               <p className="text-gray-600 text-sm">Machine Learning Research - 2 hours ago</p>
             </div>
           </div>
