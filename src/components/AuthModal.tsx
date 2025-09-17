@@ -3,20 +3,24 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, Lock, User, ArrowRight } from 'lucide-react'
-import { signUp, signIn } from '@/lib/supabase'
+import { AuthService, SignUpData } from '@/services/auth'
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   mode: 'signin' | 'signup'
   setMode: (mode: 'signin' | 'signup') => void
+  onLogin?: (user: any, userType: 'student' | 'mentor') => void
 }
 
-export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, mode, setMode, onLogin }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [userType, setUserType] = useState<'student' | 'mentor'>('student')
+  const [subjects, setSubjects] = useState<string[]>([])
+  const [hourlyRate, setHourlyRate] = useState('')
+  const [bio, setBio] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -27,15 +31,31 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
 
     try {
       if (mode === 'signup') {
-        const { data, error } = await signUp(email, password, {
-          full_name: fullName,
-          user_type: userType
-        })
+        const signUpData: SignUpData = {
+          email,
+          password,
+          name: fullName,
+          userType,
+          subjects: userType === 'mentor' ? subjects : undefined,
+          hourlyRate: userType === 'mentor' && hourlyRate ? parseFloat(hourlyRate) : undefined,
+          bio: userType === 'mentor' ? bio : undefined
+        }
+
+        const { user, profile, error } = await AuthService.signUp(signUpData)
         if (error) throw error
+        
+        // Call onLogin with user data and type
+        if (onLogin && user && profile) {
+          onLogin(user, profile.user_type)
+        }
         onClose()
       } else {
-        const { data, error } = await signIn(email, password)
+        const { user, profile, error } = await AuthService.signIn(email, password)
         if (error) throw error
+        
+        if (onLogin && user && profile) {
+          onLogin(user, profile.user_type)
+        }
         onClose()
       }
     } catch (err: any) {
@@ -77,7 +97,7 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Full Name"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -88,8 +108,8 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
                   onClick={() => setUserType('student')}
                   className={`flex-1 py-3 rounded-full font-semibold transition-all ${
                     userType === 'student'
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                      : 'border border-gray-300 text-gray-700 hover:border-orange-500'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                      : 'border border-gray-300 text-gray-700 hover:border-amber-500'
                   }`}
                 >
                   Student
@@ -99,13 +119,43 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
                   onClick={() => setUserType('mentor')}
                   className={`flex-1 py-3 rounded-full font-semibold transition-all ${
                     userType === 'mentor'
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                      : 'border border-gray-300 text-gray-700 hover:border-orange-500'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                      : 'border border-gray-300 text-gray-700 hover:border-amber-500'
                   }`}
                 >
                   Mentor
                 </button>
               </div>
+
+              {userType === 'mentor' && (
+                <>
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={subjects.join(', ')}
+                      onChange={(e) => setSubjects(e.target.value.split(', ').filter(s => s.trim()))}
+                      placeholder="Subjects you teach (e.g., Mathematics, Physics, Chemistry)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    />
+                    
+                    <input
+                      type="number"
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(e.target.value)}
+                      placeholder="Hourly rate ($)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    />
+                    
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Brief bio describing your expertise and teaching experience"
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -116,7 +166,7 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               required
             />
           </div>
@@ -128,7 +178,7 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               required
             />
           </div>
@@ -142,7 +192,7 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
             disabled={loading}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 rounded-full font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-full font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 hover:from-amber-600 hover:to-orange-600 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             <span>{loading ? 'Processing...' : mode === 'signin' ? 'Sign In' : 'Create Account'}</span>
             {!loading && <ArrowRight size={20} />}
@@ -152,7 +202,7 @@ export default function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalP
         <div className="text-center">
           <button
             onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-            className="text-orange-500 hover:text-orange-600 font-semibold"
+            className="text-amber-600 hover:text-orange-600 font-semibold transition-colors duration-200"
           >
             {mode === 'signin' 
               ? "Don't have an account? Sign up" 
