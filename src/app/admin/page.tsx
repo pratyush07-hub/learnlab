@@ -54,7 +54,7 @@ export default function AdminDashboard() {
     duration: 60,
     amount: 0,
     notes: '',
-    meet_link: ''
+    meeting_link: ''
   })
 
   // Program Management States
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
       duration: session.duration,
       amount: session.amount,
       notes: session.notes || '',
-      meet_link: (session as any).meet_link || ''
+      meeting_link: (session as any).meeting_link || ''
     })
     setShowSessionModal(true)
   }
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
       duration: 60,
       amount: 0,
       notes: '',
-      meet_link: ''
+      meeting_link: ''
     })
     setShowSessionModal(true)
   }
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
           duration: sessionForm.duration,
           amount: sessionForm.amount,
           notes: sessionForm.notes,
-          meet_link: sessionForm.meet_link
+          meeting_link: sessionForm.meeting_link
         } as any)
 
         if (error) {
@@ -345,7 +345,7 @@ export default function AdminDashboard() {
           duration: sessionForm.duration,
           amount: sessionForm.amount,
           notes: sessionForm.notes,
-          meetLink: sessionForm.meet_link
+          meetingLink: sessionForm.meeting_link
         } as any)
 
         if (error) {
@@ -927,9 +927,9 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {(session as any).meet_link ? (
+                            {(session as any).meeting_link ? (
                               <a 
-                                href={(session as any).meet_link} 
+                                href={(session as any).meeting_link} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
@@ -1777,8 +1777,8 @@ export default function AdminDashboard() {
                   <label className="block text-sm font-medium text-gray-700">Google Meet Link</label>
                   <input
                     type="url"
-                    value={sessionForm.meet_link}
-                    onChange={(e) => setSessionForm({...sessionForm, meet_link: e.target.value})}
+                    value={sessionForm.meeting_link}
+                    onChange={(e) => setSessionForm({...sessionForm, meeting_link: e.target.value})}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
                     placeholder="https://meet.google.com/xxx-xxxx-xxx"
                   />

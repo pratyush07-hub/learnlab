@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS files CASCADE;
 DROP TABLE IF EXISTS earnings CASCADE;
 DROP TABLE IF EXISTS messages CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS programs CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
 
 -- Profiles table (extends auth.users)
@@ -40,6 +41,7 @@ CREATE TABLE sessions (
   status TEXT NOT NULL CHECK (status IN ('scheduled', 'completed', 'cancelled')) DEFAULT 'scheduled',
   amount DECIMAL(10,2) NOT NULL,
   notes TEXT,
+  meeting_link TEXT, -- Google Meet or other video call link
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -76,6 +78,22 @@ CREATE TABLE files (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Programs table
+CREATE TABLE programs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  duration_weeks INTEGER NOT NULL,
+  session_count INTEGER NOT NULL,
+  mentor_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  subjects TEXT[], -- Array of subjects covered
+  level TEXT NOT NULL CHECK (level IN ('beginner', 'intermediate', 'advanced')),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_sessions_student_id ON sessions(student_id);
 CREATE INDEX idx_sessions_mentor_id ON sessions(mentor_id);
@@ -84,6 +102,8 @@ CREATE INDEX idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX idx_messages_receiver_id ON messages(receiver_id);
 CREATE INDEX idx_earnings_mentor_id ON earnings(mentor_id);
 CREATE INDEX idx_files_user_id ON files(user_id);
+CREATE INDEX idx_programs_mentor_id ON programs(mentor_id);
+CREATE INDEX idx_programs_is_active ON programs(is_active);
 
 -- Row Level Security (RLS) Policies
 
@@ -93,6 +113,7 @@ ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE earnings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE files ENABLE ROW LEVEL SECURITY;
+ALTER TABLE programs ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 CREATE POLICY "Users can view all profiles" ON profiles FOR SELECT USING (true);
@@ -142,6 +163,23 @@ CREATE POLICY "Users can delete their files" ON files FOR DELETE USING (
   auth.uid() = user_id
 );
 
+-- Programs policies
+CREATE POLICY "Users can view active programs" ON programs FOR SELECT USING (
+  is_active = true
+);
+CREATE POLICY "Mentors can view their programs" ON programs FOR SELECT USING (
+  auth.uid() = mentor_id
+);
+CREATE POLICY "Mentors can create programs" ON programs FOR INSERT WITH CHECK (
+  auth.uid() = mentor_id
+);
+CREATE POLICY "Mentors can update their programs" ON programs FOR UPDATE USING (
+  auth.uid() = mentor_id
+);
+CREATE POLICY "Mentors can delete their programs" ON programs FOR DELETE USING (
+  auth.uid() = mentor_id
+);
+
 -- Functions and triggers for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -157,17 +195,30 @@ CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
 CREATE TRIGGER update_sessions_updated_at BEFORE UPDATE ON sessions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to handle new user signup
+CREATE TRIGGER update_programs_updated_at BEFORE UPDATE ON programs
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to handle new user signup (create or replace to avoid conflicts)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, name, user_type)
-  VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'user_type');
+  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'name', 'User'), COALESCE(NEW.raw_user_meta_data->>'user_type', 'student'))
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger for new user signup
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- Trigger for new user signup (only create if it doesn't exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger 
+    WHERE tgname = 'on_auth_user_created' 
+    AND tgrelid = 'auth.users'::regclass
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;

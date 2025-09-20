@@ -325,7 +325,7 @@ export class SessionService {
     duration: number
     amount: number
     notes?: string
-    meetLink?: string
+    meetingLink?: string
   }): Promise<{ data?: Session, error?: Error | null }> {
     try {
       const { data, error } = await supabase
@@ -339,7 +339,7 @@ export class SessionService {
           duration: sessionData.duration,
           amount: sessionData.amount,
           notes: sessionData.notes,
-          meet_link: sessionData.meetLink,
+          meeting_link: sessionData.meetingLink,
           status: 'scheduled'
         })
         .select()
