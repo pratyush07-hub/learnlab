@@ -53,7 +53,8 @@ export default function AdminDashboard() {
     session_time: '',
     duration: 60,
     amount: 0,
-    notes: ''
+    notes: '',
+    meet_link: ''
   })
 
   // Program Management States
@@ -282,35 +283,82 @@ export default function AdminDashboard() {
       session_time: session.session_time,
       duration: session.duration,
       amount: session.amount,
-      notes: session.notes || ''
+      notes: session.notes || '',
+      meet_link: (session as any).meet_link || ''
+    })
+    setShowSessionModal(true)
+  }
+
+  const handleAddSession = () => {
+    setSelectedSession(null)
+    setSessionForm({
+      student_id: '',
+      mentor_id: '',
+      subject: '',
+      session_date: '',
+      session_time: '',
+      duration: 60,
+      amount: 0,
+      notes: '',
+      meet_link: ''
     })
     setShowSessionModal(true)
   }
 
   const handleSaveSession = async () => {
-    if (!selectedSession) return
-    
     setFormLoading(true)
     try {
-      const { data, error } = await SessionService.updateSession(selectedSession.id, {
-        subject: sessionForm.subject,
-        session_date: sessionForm.session_date,
-        session_time: sessionForm.session_time,
-        duration: sessionForm.duration,
-        amount: sessionForm.amount,
-        notes: sessionForm.notes
-      })
+      if (selectedSession) {
+        // Update existing session
+        const { data, error } = await SessionService.updateSession(selectedSession.id, {
+          subject: sessionForm.subject,
+          session_date: sessionForm.session_date,
+          session_time: sessionForm.session_time,
+          duration: sessionForm.duration,
+          amount: sessionForm.amount,
+          notes: sessionForm.notes,
+          meet_link: sessionForm.meet_link
+        } as any)
 
-      if (error) {
-        showNotification('error', 'Failed to update session: ' + error.message)
+        if (error) {
+          showNotification('error', 'Failed to update session: ' + error.message)
+        } else {
+          // Update the local sessions array
+          setSessions(sessions.map(s => s.id === selectedSession.id ? { ...s, ...data } : s))
+          setShowSessionModal(false)
+          showNotification('success', 'Session updated successfully!')
+        }
       } else {
-        // Update the local sessions array
-        setSessions(sessions.map(s => s.id === selectedSession.id ? { ...s, ...data } : s))
-        setShowSessionModal(false)
-        showNotification('success', 'Session updated successfully!')
+        // Create new session
+        if (!sessionForm.student_id || !sessionForm.mentor_id || !sessionForm.subject || !sessionForm.session_date || !sessionForm.session_time) {
+          showNotification('error', 'Please fill in all required fields')
+          setFormLoading(false)
+          return
+        }
+
+        const { data, error } = await SessionService.createSession({
+          studentId: sessionForm.student_id,
+          mentorId: sessionForm.mentor_id,
+          subject: sessionForm.subject,
+          date: sessionForm.session_date,
+          time: sessionForm.session_time,
+          duration: sessionForm.duration,
+          amount: sessionForm.amount,
+          notes: sessionForm.notes,
+          meetLink: sessionForm.meet_link
+        } as any)
+
+        if (error) {
+          showNotification('error', 'Failed to create session: ' + error.message)
+        } else {
+          // Reload sessions to get the new one with populated relations
+          await loadDashboardData()
+          setShowSessionModal(false)
+          showNotification('success', 'Session scheduled successfully!')
+        }
       }
     } catch (error) {
-      showNotification('error', 'Failed to update session')
+      showNotification('error', 'Failed to save session')
     }
     setFormLoading(false)
   }
@@ -757,8 +805,11 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors">
-                    Add Session
+                  <button 
+                    onClick={handleAddSession}
+                    className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+                  >
+                    Schedule Session
                   </button>
                   <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                     Export Data
@@ -809,6 +860,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Meet Link</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -873,6 +925,23 @@ export default function AdminDashboard() {
                             }`}>
                               {session.status}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {(session as any).meet_link ? (
+                              <a 
+                                href={(session as any).meet_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                              >
+                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm6 5a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1zM7 10a1 1 0 000 2h3a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                                Join Meeting
+                              </a>
+                            ) : (
+                              <span className="text-gray-400 text-xs">No link</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button 
@@ -1604,13 +1673,51 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Session Edit Modal */}
-      {showSessionModal && selectedSession && (
+      {/* Session Modal */}
+      {showSessionModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white max-w-lg">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Session</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {selectedSession ? 'Edit Session' : 'Schedule New Session'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {!selectedSession && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Student</label>
+                      <select
+                        value={sessionForm.student_id}
+                        onChange={(e) => setSessionForm({...sessionForm, student_id: e.target.value})}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                        required
+                      >
+                        <option value="">Select Student</option>
+                        {users.filter(u => u.user_type === 'student').map(student => (
+                          <option key={student.id} value={student.id}>
+                            {student.name} ({student.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Mentor</label>
+                      <select
+                        value={sessionForm.mentor_id}
+                        onChange={(e) => setSessionForm({...sessionForm, mentor_id: e.target.value})}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                        required
+                      >
+                        <option value="">Select Mentor</option>
+                        {users.filter(u => u.user_type === 'mentor').map(mentor => (
+                          <option key={mentor.id} value={mentor.id}>
+                            {mentor.name} ({mentor.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Subject</label>
                   <input
@@ -1618,6 +1725,8 @@ export default function AdminDashboard() {
                     value={sessionForm.subject}
                     onChange={(e) => setSessionForm({...sessionForm, subject: e.target.value})}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="e.g., Machine Learning Basics"
+                    required
                   />
                 </div>
                 <div>
@@ -1627,6 +1736,7 @@ export default function AdminDashboard() {
                     value={sessionForm.session_date}
                     onChange={(e) => setSessionForm({...sessionForm, session_date: e.target.value})}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                    required
                   />
                 </div>
                 <div>
@@ -1636,16 +1746,22 @@ export default function AdminDashboard() {
                     value={sessionForm.session_time}
                     onChange={(e) => setSessionForm({...sessionForm, session_time: e.target.value})}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                  <input
-                    type="number"
+                  <select
                     value={sessionForm.duration}
                     onChange={(e) => setSessionForm({...sessionForm, duration: Number(e.target.value)})}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
-                  />
+                  >
+                    <option value={5}>5 minutes (Free Consultation)</option>
+                    <option value={30}>30 minutes</option>
+                    <option value={60}>60 minutes</option>
+                    <option value={90}>90 minutes</option>
+                    <option value={120}>120 minutes</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Amount (₹)</label>
@@ -1654,15 +1770,28 @@ export default function AdminDashboard() {
                     value={sessionForm.amount}
                     onChange={(e) => setSessionForm({...sessionForm, amount: Number(e.target.value)})}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="0 for free sessions"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Google Meet Link</label>
+                  <input
+                    type="url"
+                    value={sessionForm.meet_link}
+                    onChange={(e) => setSessionForm({...sessionForm, meet_link: e.target.value})}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Optional: Add a Google Meet link for the session</p>
+                </div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">Notes</label>
                   <textarea
                     value={sessionForm.notes}
                     onChange={(e) => setSessionForm({...sessionForm, notes: e.target.value})}
                     rows={3}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                    placeholder="Any additional notes or session agenda..."
                   />
                 </div>
               </div>
@@ -1679,7 +1808,7 @@ export default function AdminDashboard() {
                   className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors disabled:opacity-50"
                   disabled={formLoading}
                 >
-                  {formLoading ? 'Saving...' : 'Save'}
+                  {formLoading ? 'Saving...' : selectedSession ? 'Update Session' : 'Schedule Session'}
                 </button>
               </div>
             </div>

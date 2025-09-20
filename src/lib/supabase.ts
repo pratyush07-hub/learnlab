@@ -39,6 +39,7 @@ export interface Session {
   status: 'scheduled' | 'completed' | 'cancelled'
   amount: number
   notes?: string
+  meet_link?: string
   created_at: string
   updated_at: string
   student?: Profile
