@@ -68,15 +68,39 @@ export class RazorpayService {
 
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.crossOrigin = 'anonymous';
+      script.referrerPolicy = 'no-referrer-when-downgrade';
+      
       script.onload = () => {
         console.log('✅ Razorpay script loaded successfully');
-        resolve(true);
+        // Additional check to ensure Razorpay object is available
+        setTimeout(() => {
+          if (window.Razorpay) {
+            console.log('✅ Razorpay object confirmed available');
+            resolve(true);
+          } else {
+            console.error('❌ Razorpay object not available after script load');
+            resolve(false);
+          }
+        }, 100);
       };
+      
       script.onerror = (error) => {
         console.error('❌ Failed to load Razorpay script:', error);
+        console.error('❌ This might be due to CSP restrictions or network issues');
         resolve(false);
       };
-      document.body.appendChild(script);
+      
+      // Add script to head instead of body for better loading
+      document.head.appendChild(script);
+      
+      // Timeout fallback
+      setTimeout(() => {
+        if (!window.Razorpay) {
+          console.error('❌ Razorpay script loading timeout (5s)');
+          resolve(false);
+        }
+      }, 5000);
     });
   }
 

@@ -35,14 +35,17 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://tepysveqbchnyjkeyjnh.supabase.co https://api.razorpay.com;",
-          },
+          // Only apply CSP in production
+          ...(process.env.NODE_ENV === 'production' ? [
+            {
+              key: 'Strict-Transport-Security',
+              value: 'max-age=31536000; includeSubDomains',
+            },
+            {
+              key: 'Content-Security-Policy',
+              value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com; style-src 'self' 'unsafe-inline' https://checkout.razorpay.com; img-src 'self' data: blob: https: https://*.razorpay.com; font-src 'self' data: https://checkout.razorpay.com; connect-src 'self' https://tepysveqbchnyjkeyjnh.supabase.co https://api.razorpay.com https://*.razorpay.com; frame-src 'self' https://api.razorpay.com https://*.razorpay.com; child-src 'self' https://api.razorpay.com;",
+            }
+          ] : []),
         ],
       },
     ];
