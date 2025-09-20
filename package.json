@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:production": "NODE_ENV=production next build",
+    "start:production": "NODE_ENV=production next start",
+    "analyze": "ANALYZE=true npm run build",
+    "export": "next build && next export",
+    "type-check": "tsc --noEmit",
+    "test:build": "npm run build && npm run start"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",
