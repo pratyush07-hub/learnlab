@@ -77,6 +77,22 @@ export interface FileRecord {
   created_at: string
 }
 
+export interface Program {
+  id: string
+  title: string
+  description: string
+  price: number
+  duration_weeks: number
+  session_count: number
+  mentor_id: string
+  subjects: string[]
+  level: 'beginner' | 'intermediate' | 'advanced'
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  mentor?: Profile
+}
+
 // Auth helpers
 export const signUp = async (email: string, password: string, userData: any) => {
   const { data, error } = await supabase.auth.signUp({

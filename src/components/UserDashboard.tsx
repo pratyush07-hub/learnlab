@@ -66,7 +66,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
     subject: '',
     date: '',
     time: '',
-    duration: 60,
+    duration: 5,
     notes: ''
   });
   const [loading, setLoading] = useState(true);
@@ -120,7 +120,8 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
     }
 
     try {
-      const amount = (selectedMentor.hourly_rate || 50) * (bookingData.duration / 60);
+      // 5-minute consultations are always free
+      const amount = bookingData.duration === 5 ? 0 : (selectedMentor.hourly_rate || 50) * (bookingData.duration / 60);
       
       const result = await SessionService.createSession({
         studentId: user.id,
@@ -151,7 +152,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
         subject: '',
         date: '',
         time: '',
-        duration: 60,
+        duration: 5,
         notes: ''
       });
       setActiveTab('sessions');
@@ -758,17 +759,13 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                <select
-                  value={bookingData.duration}
-                  onChange={(e) => setBookingData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  <option value={30}>30 minutes</option>
-                  <option value={60}>60 minutes</option>
-                  <option value={90}>90 minutes</option>
-                  <option value={120}>120 minutes</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                  <span className="text-gray-700">5 minutes (Free Consultation)</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Book a free 5-minute consultation. Your mentor will suggest a program based on your needs.
+                </p>
               </div>
 
               <div>

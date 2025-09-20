@@ -1,0 +1,109 @@
+Prompt for AI Development Agent: Project LearnLab
+Project Overview:
+Your mission is to build the "LearnLab" platform from the ground up. LearnLab is a cutting-edge research mentorship program designed to connect school students (ages 9–19) with expert mentors. You will be responsible for the entire front-end and back-end development, following a two-phase development plan.
+
+Persona:
+Act as a senior-most UI/UX engineer and a full-stack developer. Your work must reflect a deep understanding of modern design principles, user experience, and robust, scalable architecture.
+
+Core Technology Stack:
+
+Frontend: Next.js (using React)
+
+Backend & Database: Supabase (for database, authentication, and real-time features)
+
+Styling: Tailwind CSS
+
+Deployment Target: Vercel
+
+Phase 1: Full Platform Build & Homepage Design
+Your first task is to develop the complete platform, including all user portals and a unique, market-leading homepage.
+
+1. Homepage UI/UX Directive:
+The homepage is the most critical element of the brand's first impression. It must be an "out of the box" and exceptionally modern user interface.
+
+Theme: Implement a premium and sophisticated theme using a strict color palette:
+
+Primary Accent: A vibrant, energetic orange (#FF4500 or similar). Use this for key calls-to-action, highlights, and interactive elements.
+
+Background/Primary Text: A deep, rich black (#0A0A0A or similar).
+
+Negative Space/Secondary Text: A clean, crisp white (#FFFFFF).
+
+Design Philosophy:
+
+Asymmetric Layouts: Avoid predictable, centered layouts. Use staggered grids and asymmetric designs to guide the user's eye and create visual interest.
+
+Bold Typography: Use a modern, sans-serif font with strong weight variations to establish a clear visual hierarchy.
+
+Micro-interactions: Implement subtle animations and transitions on scroll, hover, and click events to make the UI feel alive and responsive.
+
+Immersive Sections: Create distinct, full-screen sections that tell a story as the user scrolls, showcasing the problem, the solution (LearnLab), testimonials, and a final call-to-action.
+
+2. Feature Implementation:
+You must build the three distinct portals with the following features:
+
+A) User (Student) Dashboard:
+
+Gamified onboarding to identify interests.
+
+Personalized profile with project portfolio.
+
+"Mentor Match" recommendation algorithm.
+
+Advanced mentor search with filters.
+
+Per-project workspace with a visual timeline, Kanban board, and integrated document editor.
+
+Secure chat/video calls and a "Doubt Corner."
+
+Calendar integration for booking sessions.
+
+Gamified progress tracking with badges and achievements.
+
+B) Mentor Portal (accessed via /mentor):
+
+Detailed professional profile builder.
+
+Customizable calendar for managing availability.
+
+Dashboard for managing all mentees and tracking their progress.
+
+"Session Notes" feature for logging discussion points.
+
+Tool for creating reusable "Research Modules" or templates.
+
+Financial dashboard to track earnings and manage payouts.
+
+A private community forum for mentors.
+
+C) Admin Portal (accessed via /admin):
+
+Super admin dashboards for managing all users and mentors.
+
+A robust mentor vetting and approval workflow.
+
+Central library for managing platform-wide resources.
+
+Detailed financial reporting and analytics.
+
+Platform health and user engagement analytics.
+
+Support ticketing and dispute resolution system.
+
+Tools for platform-wide announcements and marketing.
+
+Phase 2: Mobile-First Responsive Refinement
+Directive:
+After all features from Phase 1 are fully implemented and functional, you will begin Phase 2. The objective of this phase is to refactor and refine the entire platform to ensure a flawless and intuitive mobile experience. Do not simply shrink the desktop site; rebuild the experience for a mobile-first context.
+
+Actionable Tasks:
+
+Responsive Layout Conversion: Convert all static layouts to a fluid, responsive grid system. The site must adapt perfectly from small mobile screens (320px) to large desktops.
+
+Touch-Friendly Components: Ensure all buttons, links, and interactive elements are large enough and spaced appropriately for easy use on touchscreens.
+
+Mobile Navigation: Redesign the primary navigation to collapse into a clean, intuitive hamburger menu on mobile devices.
+
+Performance Optimization: Optimize all images and assets for fast loading times on mobile networks. Implement lazy loading for media assets.
+
+Form Factor Testing: Verify that all forms, dashboards, and complex UI elements (like Kanban boards and calendars) are fully usable and readable on mobile viewports. The experience should feel native to the device.
