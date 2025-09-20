@@ -69,6 +69,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [razorpayTest, setRazorpayTest] = useState<{ success: boolean; message: string } | null>(null);
   const [bookingData, setBookingData] = useState<BookingData>({
     mentorId: '',
     subject: '',
@@ -199,23 +200,38 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
     }
   };
 
-  const handlePurchaseProgram = async () => {
-    if (!selectedProgram) return;
+  // Test Razorpay integration
+  const testRazorpay = async () => {
+    console.log('🧪 Testing Razorpay integration...');
+    const result = await RazorpayService.testRazorpay();
+    setRazorpayTest(result);
+    console.log('Test result:', result);
+  };
 
-    console.log('Starting purchase process for program:', selectedProgram);
+  const handlePurchaseProgram = async () => {
+    if (!selectedProgram) {
+      setError('No program selected');
+      return;
+    }
+
+    console.log('🚀 Starting payment for:', selectedProgram.title);
 
     // Check if already enrolled
-    const enrollmentCheck = await EnrollmentService.checkEnrollment(user.id, selectedProgram.id);
-    if (enrollmentCheck.data) {
-      setError('You are already enrolled in this program!');
-      return;
+    try {
+      const enrollmentCheck = await EnrollmentService.checkEnrollment(user.id, selectedProgram.id);
+      if (enrollmentCheck.data) {
+        setError('You are already enrolled in this program!');
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking enrollment:', err);
     }
 
     setPurchaseLoading(true);
     setError(''); // Clear any previous errors
-    
+
     try {
-      console.log('Initiating Razorpay payment...');
+      console.log('💳 Initiating payment process...');
       
       await RazorpayService.initiatePayment(
         selectedProgram.price || 0,
@@ -224,89 +240,68 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
           name: user.name,
           email: user.email
         },
-        async (response) => {
-          // Payment successful
-          console.log('Payment successful:', response);
+        async (paymentResponse) => {
+          console.log('✅ Payment successful!', paymentResponse);
           
           try {
             // Verify payment
-            const isVerified = await RazorpayService.verifyPayment(response);
+            const isVerified = await RazorpayService.verifyPayment(paymentResponse);
             
             if (isVerified) {
-              console.log('Payment verified, creating enrollment...');
+              console.log('✅ Payment verified, creating enrollment...');
               
               // Create enrollment record
               const enrollmentResult = await EnrollmentService.createEnrollment({
                 studentId: user.id,
                 programId: selectedProgram.id,
-                paymentId: response.razorpay_payment_id,
+                paymentId: paymentResponse.razorpay_payment_id,
                 amountPaid: selectedProgram.price || 0,
                 paymentStatus: 'completed',
-                notes: `Enrollment via Razorpay payment ${response.razorpay_payment_id}`
+                notes: `Enrollment via payment ${paymentResponse.razorpay_payment_id}`
               });
 
               if (enrollmentResult.error) {
-                console.error('Error creating enrollment:', enrollmentResult.error);
-                setError('Payment successful but failed to create enrollment. Please contact support with payment ID: ' + response.razorpay_payment_id);
+                console.error('❌ Enrollment creation failed:', enrollmentResult.error);
+                setError(`Payment successful but enrollment failed. Contact support with payment ID: ${paymentResponse.razorpay_payment_id}`);
               } else {
-                console.log('Enrollment created successfully');
+                console.log('✅ Enrollment completed successfully!');
                 setError('');
-                alert(`Successfully enrolled in ${selectedProgram.title}! You can now access your program from the dashboard.`);
+                alert(`🎉 Successfully enrolled in ${selectedProgram.title}! Check your dashboard for access.`);
                 setShowPurchaseModal(false);
                 setSelectedProgram(null);
-                
-                // Refresh data to show new enrollment
-                loadData();
+                loadData(); // Refresh data
               }
             } else {
-              console.error('Payment verification failed');
-              setError('Payment verification failed. Please contact support with payment ID: ' + response.razorpay_payment_id);
+              console.error('❌ Payment verification failed');
+              setError(`Payment verification failed. Contact support with payment ID: ${paymentResponse.razorpay_payment_id}`);
             }
           } catch (enrollmentError) {
-            console.error('Error in post-payment processing:', enrollmentError);
-            setError('Payment successful but enrollment processing failed. Please contact support with payment ID: ' + response.razorpay_payment_id);
-          } finally {
-            setPurchaseLoading(false);
+            console.error('❌ Post-payment processing failed:', enrollmentError);
+            setError(`Payment successful but processing failed. Contact support with payment ID: ${paymentResponse.razorpay_payment_id}`);
           }
+          
+          setPurchaseLoading(false);
         },
-        (error) => {
-          // Payment failed or cancelled
-          console.error('Payment failed or cancelled:', error);
+        (paymentError) => {
+          console.error('❌ Payment failed:', paymentError);
           setPurchaseLoading(false);
           
-          // Handle different error types
-          if (error && error.code === 'USER_CANCELLED') {
+          // Handle different error scenarios
+          if (paymentError?.code === 'USER_CANCELLED') {
             setError('Payment was cancelled. You can try again anytime.');
-          } else if (error && error.code === 'BAD_REQUEST_ERROR') {
-            setError('Payment request failed. Please check your details and try again.');
-          } else if (error && error.code === 'GATEWAY_ERROR') {
-            setError('Payment gateway error. Please try again in a few moments.');
-          } else if (error && error.code === 'NETWORK_ERROR') {
-            setError('Network error. Please check your internet connection and try again.');
-          } else if (error && error.code === 'SERVER_ERROR') {
-            setError('Server error. Please try again later or contact support.');
-          } else if (error && error.code === 'MODAL_OPEN_ERROR') {
-            setError('Unable to open payment window. Please try refreshing the page.');
-          } else if (error && error.description) {
-            setError(`Payment failed: ${error.description}`);
-          } else if (error && error.message) {
-            setError(`Payment error: ${error.message}`);
+          } else if (paymentError?.code === 'INIT_ERROR') {
+            setError(`Payment setup failed: ${paymentError.description}`);
+          } else if (paymentError?.description) {
+            setError(`Payment failed: ${paymentError.description}`);
           } else {
-            setError('Payment failed. Please try again or contact support if the issue persists.');
+            setError('Payment failed. Please try again or contact support.');
           }
         }
       );
     } catch (error: any) {
-      console.error('Error initiating payment:', error);
+      console.error('❌ Payment initiation failed:', error);
       setPurchaseLoading(false);
-      
-      if (error.message && error.message.includes('script')) {
-        setError('Unable to load payment system. Please check your internet connection and try again.');
-      } else if (error.message && error.message.includes('API key')) {
-        setError('Payment system configuration error. Please contact support.');
-      } else {
-        setError(`Failed to initiate payment: ${error.message || 'Unknown error'}. Please try again.`);
-      }
+      setError(`Failed to start payment: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -815,6 +810,27 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Razorpay Test Section */}
+              <div className="premium-card p-4 rounded-xl bg-blue-50 border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-blue-900">🧪 Payment System Test</h3>
+                    <p className="text-sm text-blue-600">Test if Razorpay is working properly</p>
+                  </div>
+                  <button
+                    onClick={testRazorpay}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Test Razorpay
+                  </button>
+                </div>
+                {razorpayTest && (
+                  <div className={`mt-3 p-3 rounded-lg ${razorpayTest.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span className={razorpayTest.success ? '✅' : '❌'}></span> {razorpayTest.message}
+                  </div>
+                )}
               </div>
 
               {/* Programs Grid */}
