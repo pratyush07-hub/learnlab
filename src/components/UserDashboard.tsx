@@ -274,14 +274,25 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
           console.error('Payment failed or cancelled:', error);
           setPurchaseLoading(false);
           
-          if (error && error.code === 'BAD_REQUEST_ERROR') {
-            setError('Payment cancelled by user.');
+          // Handle different error types
+          if (error && error.code === 'USER_CANCELLED') {
+            setError('Payment was cancelled. You can try again anytime.');
+          } else if (error && error.code === 'BAD_REQUEST_ERROR') {
+            setError('Payment request failed. Please check your details and try again.');
+          } else if (error && error.code === 'GATEWAY_ERROR') {
+            setError('Payment gateway error. Please try again in a few moments.');
+          } else if (error && error.code === 'NETWORK_ERROR') {
+            setError('Network error. Please check your internet connection and try again.');
+          } else if (error && error.code === 'SERVER_ERROR') {
+            setError('Server error. Please try again later or contact support.');
+          } else if (error && error.code === 'MODAL_OPEN_ERROR') {
+            setError('Unable to open payment window. Please try refreshing the page.');
           } else if (error && error.description) {
             setError(`Payment failed: ${error.description}`);
           } else if (error && error.message) {
             setError(`Payment error: ${error.message}`);
           } else {
-            setError('Payment failed. Please try again or contact support.');
+            setError('Payment failed. Please try again or contact support if the issue persists.');
           }
         }
       );
