@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Home, Users, BookOpen, Calendar, MessageCircle, Settings, User } from 'lucide-react'
+import { Menu, X, Home, Users, BookOpen, Calendar, MessageCircle, Settings, User, GraduationCap } from 'lucide-react'
 import Link from 'next/link'
 
 interface MobileNavProps {
@@ -19,6 +19,7 @@ export default function MobileNav({ userType, currentPath }: MobileNavProps) {
         return [
           { icon: Home, label: 'Dashboard', href: '/dashboard' },
           { icon: Users, label: 'Find Mentors', href: '/dashboard?tab=mentors' },
+          { icon: GraduationCap, label: 'Programs', href: '/dashboard?tab=programs' },
           { icon: BookOpen, label: 'My Projects', href: '/dashboard?tab=projects' },
           { icon: Calendar, label: 'Sessions', href: '/dashboard?tab=sessions' },
           { icon: MessageCircle, label: 'Messages', href: '/dashboard?tab=messages' },

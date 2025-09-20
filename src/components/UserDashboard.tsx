@@ -26,7 +26,8 @@ import {
   Download,
   Settings,
   LogOut,
-  Bell
+  Bell,
+  Target
 } from 'lucide-react';
 
 import { AuthService } from '@/services/auth';
@@ -772,142 +773,126 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {/* Filters */}
-              <div className="premium-card p-6 rounded-2xl">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search programs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                      />
+              {/* LearnLab Store Redirect */}
+              <div className="premium-card p-8 rounded-3xl text-center bg-gradient-to-br from-amber-50 to-orange-50">
+                <div className="max-w-2xl mx-auto">
+                  <div className="mb-6">
+                    <div className="w-20 h-20 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen className="w-10 h-10 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Explore Our Programs</h2>
+                    <p className="text-lg text-gray-600 mb-6">
+                      Discover our comprehensive learning programs designed to accelerate your research and academic journey. 
+                      Choose from various specializations and get personalized guidance from expert mentors.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <Star className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Expert Mentorship</h3>
+                      <p className="text-sm text-gray-600">Get personalized guidance from industry experts and researchers</p>
+                    </div>
+                    
+                    <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4">
+                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <Clock className="w-6 h-6 text-green-600" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Flexible Learning</h3>
+                      <p className="text-sm text-gray-600">Learn at your own pace with structured programs and deadlines</p>
+                    </div>
+                    
+                    <div className="bg-white/70 backdrop-blur-sm rounded-xl p-4">
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <Target className="w-6 h-6 text-purple-600" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Goal-Oriented</h3>
+                      <p className="text-sm text-gray-600">Programs designed to achieve specific research and career goals</p>
                     </div>
                   </div>
-                  <div className="flex gap-4">
-                    <select
-                      value={selectedLevel}
-                      onChange={(e) => setSelectedLevel(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => window.open('https://pages.razorpay.com/stores/learnlab', '_blank')}
+                      className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-lg font-semibold rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
                     >
-                      <option value="all">All Levels</option>
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                    </select>
-                    <select
-                      value={selectedSubject}
-                      onChange={(e) => setSelectedSubject(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                    >
-                      <option value="all">All Subjects</option>
-                      {Array.from(new Set(programs.flatMap(p => p.subjects || []))).map(subject => (
-                        <option key={subject} value={subject}>{subject}</option>
-                      ))}
-                    </select>
+                      🚀 Browse All Programs
+                    </button>
+                    
+                    <p className="text-sm text-gray-500">
+                      You'll be redirected to our secure LearnLab store powered by Razorpay
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Razorpay Test Section */}
-              <div className="premium-card p-4 rounded-xl bg-blue-50 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-blue-900">🧪 Payment System Test</h3>
-                    <p className="text-sm text-blue-600">Test if Razorpay is working properly</p>
+              {/* Quick Access Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="premium-card p-6 rounded-2xl">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-2">Need Help Choosing?</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Not sure which program is right for you? Get personalized recommendations from our counselors.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('messages')}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                      >
+                        Contact Counselor →
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={testRazorpay}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Test Razorpay
-                  </button>
                 </div>
-                {razorpayTest && (
-                  <div className={`mt-3 p-3 rounded-lg ${razorpayTest.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    <span className={razorpayTest.success ? '✅' : '❌'}></span> {razorpayTest.message}
+
+                <div className="premium-card p-6 rounded-2xl">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-2">Free Consultation</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Book a free 30-minute consultation to discuss your goals and get program recommendations.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('sessions')}
+                        className="text-green-600 hover:text-green-700 font-medium text-sm"
+                      >
+                        Book Consultation →
+                      </button>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Programs Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {programs
-                  .filter(program => {
-                    const matchesSearch = program.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                        program.description.toLowerCase().includes(searchTerm.toLowerCase());
-                    const matchesLevel = selectedLevel === 'all' || program.level === selectedLevel;
-                    const matchesSubject = selectedSubject === 'all' || 
-                                         (program.subjects && program.subjects.includes(selectedSubject));
-                    return matchesSearch && matchesLevel && matchesSubject;
-                  })
-                  .map((program) => (
-                    <motion.div
-                      key={program.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="premium-card p-6 rounded-2xl hover:shadow-lg transition-shadow"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-2">{program.title}</h3>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-3">{program.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3 mb-4">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock size={14} className="mr-2" />
-                          {program.duration_weeks} weeks • {program.session_count} sessions
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <BookOpen size={14} className="mr-2" />
-                          Level: <span className="ml-1 px-2 py-1 bg-gray-100 rounded text-xs">{program.level}</span>
-                        </div>
-                        {program.subjects && program.subjects.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {program.subjects.slice(0, 3).map((subject, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded">
-                                {subject}
-                              </span>
-                            ))}
-                            {program.subjects.length > 3 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                +{program.subjects.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div className="text-lg font-bold text-gray-900">
-                          ₹{program.price?.toLocaleString('en-IN')}
-                        </div>
-                        <button
-                          onClick={() => {
-                            setSelectedProgram(program);
-                            setShowPurchaseModal(true);
-                          }}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors text-sm font-medium"
-                        >
-                          Enroll Now
-                        </button>
-                      </div>
-                    </motion.div>
+              {/* Program Categories Preview */}
+              <div className="premium-card p-6 rounded-2xl">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Program Categories</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { name: 'Research Writing', icon: '📝', count: '12+' },
+                    { name: 'Data Analysis', icon: '📊', count: '8+' },
+                    { name: 'Literature Review', icon: '📚', count: '6+' },
+                    { name: 'Thesis Support', icon: '🎓', count: '15+' },
+                    { name: 'Publication Help', icon: '📄', count: '10+' },
+                    { name: 'Coding & Tools', icon: '💻', count: '20+' },
+                    { name: 'Statistics', icon: '📈', count: '9+' },
+                    { name: 'Career Guidance', icon: '🎯', count: '5+' }
+                  ].map((category, index) => (
+                    <div key={index} className="text-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                      <div className="text-2xl mb-2">{category.icon}</div>
+                      <h4 className="font-medium text-gray-900 text-sm mb-1">{category.name}</h4>
+                      <p className="text-xs text-gray-500">{category.count} programs</p>
+                    </div>
                   ))}
-              </div>
-
-              {programs.length === 0 && (
-                <div className="text-center py-12">
-                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No programs available</h3>
-                  <p className="mt-1 text-sm text-gray-500">Check back soon for new learning programs</p>
                 </div>
-              )}
+              </div>
             </motion.div>
           )}
 
