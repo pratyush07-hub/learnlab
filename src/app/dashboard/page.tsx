@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -19,6 +19,25 @@ import {
 } from 'lucide-react'
 
 export default function StudentDashboard() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading dashboard...</p>
+      </div>
+    </div>
+  )
+}
+
+function DashboardContent() {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('overview')
 
