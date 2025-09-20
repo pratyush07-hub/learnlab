@@ -592,12 +592,6 @@ export default function AdminDashboard() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Use admin credentials: admin@skillorbitx.com / GeetaKaSaar_3568
-            </p>
-          </div>
         </div>
       </div>
     )
