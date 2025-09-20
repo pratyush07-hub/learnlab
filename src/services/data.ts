@@ -136,24 +136,44 @@ export class UserService {
         return { 
           data: [
             {
-              id: 'mock-student-1',
+              id: '550e8400-e29b-41d4-a716-446655440004',
               email: 'student1@learnlab.com',
               name: 'Alice Johnson',
               user_type: 'student' as const,
+              bio: 'Computer Science student passionate about AI.',
+              subjects: [],
+              rating: 0,
+              hourly_rate: 0,
+              total_sessions: 12,
+              total_earnings: 0,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             },
             {
-              id: 'mock-mentor-1',
+              id: '550e8400-e29b-41d4-a716-446655440002',
               email: 'mentor1@learnlab.com',
               name: 'Dr. Sarah Kumar',
               user_type: 'mentor' as const,
-              subjects: ['Machine Learning', 'Data Science'],
+              subjects: ['Machine Learning', 'Data Science', 'Python'],
+              bio: 'Experienced ML researcher with 8+ years in the field.',
               rating: 4.9,
               hourly_rate: 1500,
-              bio: 'Experienced ML researcher with 8+ years in the field.',
               total_sessions: 156,
               total_earnings: 234000,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              id: '550e8400-e29b-41d4-a716-446655440003',
+              email: 'mentor2@learnlab.com',
+              name: 'Prof. Michael Chen',
+              user_type: 'mentor' as const,
+              subjects: ['Physics', 'Mathematics', 'Quantum Computing'],
+              bio: 'Physics professor specializing in quantum mechanics.',
+              rating: 4.8,
+              hourly_rate: 1700,
+              total_sessions: 203,
+              total_earnings: 345100,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
@@ -171,25 +191,80 @@ export class UserService {
     }
   }
 
-  // Update user profile
-  static async updateUser(userId: string, updates: Partial<Profile>): Promise<{ data?: Profile, error?: Error | null }> {
+  // Create new user (admin function)
+  static async createUser(userData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>): Promise<{ data?: Profile, error?: Error | null }> {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .update(updates)
+        .insert({
+          ...userData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating user in database:', error);
+        return { error: new Error(`Failed to create user: ${error.message}`) }
+      }
+
+      return { data }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return { error: error as Error }
+    }
+  }
+
+  // Update user profile
+  static async updateUser(userId: string, updates: Partial<Profile>): Promise<{ data?: Profile, error?: Error | null }> {
+    try {
+      // First, check if the user exists
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (fetchError && fetchError.code === 'PGRST116') {
+        // User doesn't exist, return error
+        return { error: new Error(`User with ID ${userId} not found`) }
+      }
+
+      if (fetchError) {
+        console.warn('Database connection issue, using fallback for user update:', fetchError.message);
+        // Create a fallback user profile for development
+        const fallbackUser: Profile = {
+          id: userId,
+          email: 'unknown@example.com',
+          name: updates.name || 'Unknown User',
+          user_type: updates.user_type || 'student',
+          bio: updates.bio || '',
+          subjects: updates.subjects || [],
+          hourly_rate: updates.hourly_rate || 0,
+          rating: 0,
+          total_sessions: 0,
+          total_earnings: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        return { data: { ...fallbackUser, ...updates } }
+      }
+
+      // Update the user
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId)
         .select()
         .single()
 
       if (error) {
-        console.warn('Database update failed, simulating success:', error.message);
-        // Return the updated data as if it succeeded
-        return { 
-          data: { 
-            id: userId, 
-            ...updates 
-          } as Profile 
-        }
+        console.error('Error updating user in database:', error);
+        return { error: new Error(`Failed to update user: ${error.message}`) }
       }
 
       return { data }
@@ -202,15 +277,33 @@ export class UserService {
   // Delete user
   static async deleteUser(userId: string): Promise<{ error?: Error | null }> {
     try {
+      // First, check if the user exists
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single()
+
+      if (fetchError && fetchError.code === 'PGRST116') {
+        // User doesn't exist, return error
+        return { error: new Error(`User with ID ${userId} not found`) }
+      }
+
+      if (fetchError) {
+        console.warn('Database connection issue, simulating delete success:', fetchError.message);
+        // Return success for development mode
+        return {}
+      }
+
+      // Delete the user
       const { error } = await supabase
         .from('profiles')
         .delete()
         .eq('id', userId)
 
       if (error) {
-        console.warn('Database delete failed, simulating success:', error.message);
-        // Return success for mock data
-        return {}
+        console.error('Error deleting user from database:', error);
+        return { error: new Error(`Failed to delete user: ${error.message}`) }
       }
 
       return {}

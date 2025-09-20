@@ -222,9 +222,27 @@ export default function AdminDashboard() {
           showNotification('success', 'User updated successfully!')
         }
       } else {
-        // Create new user - this would typically involve user registration
-        showNotification('success', 'User creation feature coming soon!')
-        setShowUserModal(false)
+        // Create new user
+        const { data, error } = await UserService.createUser({
+          email: editUserForm.email,
+          name: editUserForm.name,
+          user_type: editUserForm.user_type,
+          bio: editUserForm.bio,
+          subjects: editUserForm.subjects,
+          hourly_rate: editUserForm.hourly_rate,
+          rating: 0,
+          total_sessions: 0,
+          total_earnings: 0
+        })
+
+        if (error) {
+          showNotification('error', 'Failed to create user: ' + error.message)
+        } else {
+          // Add the new user to the local users array
+          setUsers([data!, ...users])
+          setShowUserModal(false)
+          showNotification('success', 'User created successfully!')
+        }
       }
     } catch (error) {
       showNotification('error', `Failed to ${selectedUser ? 'update' : 'create'} user`)
