@@ -202,6 +202,8 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
   const handlePurchaseProgram = async () => {
     if (!selectedProgram) return;
 
+    console.log('Starting purchase process for program:', selectedProgram);
+
     // Check if already enrolled
     const enrollmentCheck = await EnrollmentService.checkEnrollment(user.id, selectedProgram.id);
     if (enrollmentCheck.data) {
@@ -210,7 +212,11 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
     }
 
     setPurchaseLoading(true);
+    setError(''); // Clear any previous errors
+    
     try {
+      console.log('Initiating Razorpay payment...');
+      
       await RazorpayService.initiatePayment(
         selectedProgram.price || 0,
         `Enrollment in ${selectedProgram.title}`,
@@ -222,47 +228,74 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
           // Payment successful
           console.log('Payment successful:', response);
           
-          // Verify payment
-          const isVerified = await RazorpayService.verifyPayment(response);
-          
-          if (isVerified) {
-            // Create enrollment record
-            const enrollmentResult = await EnrollmentService.createEnrollment({
-              studentId: user.id,
-              programId: selectedProgram.id,
-              paymentId: response.razorpay_payment_id,
-              amountPaid: selectedProgram.price || 0,
-              paymentStatus: 'completed',
-              notes: `Enrollment via Razorpay payment ${response.razorpay_payment_id}`
-            });
-
-            if (enrollmentResult.error) {
-              console.error('Error creating enrollment:', enrollmentResult.error);
-              setError('Payment successful but failed to create enrollment. Please contact support.');
-            } else {
-              setError('');
-              alert(`Successfully enrolled in ${selectedProgram.title}! You can now access your program from the dashboard.`);
-              setShowPurchaseModal(false);
-              setSelectedProgram(null);
+          try {
+            // Verify payment
+            const isVerified = await RazorpayService.verifyPayment(response);
+            
+            if (isVerified) {
+              console.log('Payment verified, creating enrollment...');
               
-              // Refresh data to show new enrollment
-              loadData();
+              // Create enrollment record
+              const enrollmentResult = await EnrollmentService.createEnrollment({
+                studentId: user.id,
+                programId: selectedProgram.id,
+                paymentId: response.razorpay_payment_id,
+                amountPaid: selectedProgram.price || 0,
+                paymentStatus: 'completed',
+                notes: `Enrollment via Razorpay payment ${response.razorpay_payment_id}`
+              });
+
+              if (enrollmentResult.error) {
+                console.error('Error creating enrollment:', enrollmentResult.error);
+                setError('Payment successful but failed to create enrollment. Please contact support with payment ID: ' + response.razorpay_payment_id);
+              } else {
+                console.log('Enrollment created successfully');
+                setError('');
+                alert(`Successfully enrolled in ${selectedProgram.title}! You can now access your program from the dashboard.`);
+                setShowPurchaseModal(false);
+                setSelectedProgram(null);
+                
+                // Refresh data to show new enrollment
+                loadData();
+              }
+            } else {
+              console.error('Payment verification failed');
+              setError('Payment verification failed. Please contact support with payment ID: ' + response.razorpay_payment_id);
             }
-          } else {
-            setError('Payment verification failed. Please contact support.');
+          } catch (enrollmentError) {
+            console.error('Error in post-payment processing:', enrollmentError);
+            setError('Payment successful but enrollment processing failed. Please contact support with payment ID: ' + response.razorpay_payment_id);
+          } finally {
+            setPurchaseLoading(false);
           }
         },
         (error) => {
-          // Payment failed
-          console.error('Payment failed:', error);
-          setError(`Payment failed: ${error.description || 'Unknown error'}`);
+          // Payment failed or cancelled
+          console.error('Payment failed or cancelled:', error);
+          setPurchaseLoading(false);
+          
+          if (error && error.code === 'BAD_REQUEST_ERROR') {
+            setError('Payment cancelled by user.');
+          } else if (error && error.description) {
+            setError(`Payment failed: ${error.description}`);
+          } else if (error && error.message) {
+            setError(`Payment error: ${error.message}`);
+          } else {
+            setError('Payment failed. Please try again or contact support.');
+          }
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initiating payment:', error);
-      setError('Failed to initiate payment. Please try again.');
-    } finally {
       setPurchaseLoading(false);
+      
+      if (error.message && error.message.includes('script')) {
+        setError('Unable to load payment system. Please check your internet connection and try again.');
+      } else if (error.message && error.message.includes('API key')) {
+        setError('Payment system configuration error. Please contact support.');
+      } else {
+        setError(`Failed to initiate payment: ${error.message || 'Unknown error'}. Please try again.`);
+      }
     }
   };
 

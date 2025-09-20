@@ -38,36 +38,54 @@ declare global {
 }
 
 export class RazorpayService {
-  private static readonly KEY_ID = 'rzp_live_RJvPF8jnUt43Yy';
-  private static readonly KEY_SECRET = 'WeQgl0hxDyKoKjzjYmhWSGci';
-
+  private static readonly KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_RJvPF8jnUt43Yy';
+  
   // Load Razorpay script dynamically
   static loadRazorpayScript(): Promise<boolean> {
     return new Promise((resolve) => {
+      console.log('Loading Razorpay script...');
+      
       if (typeof window !== 'undefined' && window.Razorpay) {
+        console.log('Razorpay script already loaded');
         resolve(true);
         return;
       }
 
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onload = () => {
+        console.log('Razorpay script loaded successfully');
+        resolve(true);
+      };
+      script.onerror = (error) => {
+        console.error('Failed to load Razorpay script:', error);
+        resolve(false);
+      };
       document.body.appendChild(script);
     });
   }
 
   // Create order on server (for production, this should be a backend API call)
   static async createOrder(orderData: PaymentData): Promise<{ id: string; amount: number; currency: string }> {
-    // In production, this should call your backend API to create a Razorpay order
-    // For now, we'll simulate order creation
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    return {
-      id: orderId,
-      amount: orderData.amount,
-      currency: orderData.currency
-    };
+    try {
+      console.log('Creating order with data:', orderData);
+      
+      // In production, this should call your backend API to create a Razorpay order
+      // For now, we'll simulate order creation with enhanced logging
+      const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const order = {
+        id: orderId,
+        amount: orderData.amount,
+        currency: orderData.currency
+      };
+      
+      console.log('Order created successfully:', order);
+      return order;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw new Error('Failed to create order');
+    }
   }
 
   // Initialize payment
@@ -79,11 +97,33 @@ export class RazorpayService {
     onError: (error: any) => void
   ): Promise<void> {
     try {
+      console.log('Initiating payment with params:', { amount, description, userData });
+      
+      // Validate environment
+      if (typeof window === 'undefined') {
+        throw new Error('Payment can only be initiated in browser environment');
+      }
+
+      // Validate API key
+      if (!this.KEY_ID || this.KEY_ID === 'your-razorpay-key-id') {
+        throw new Error('Razorpay API key not configured properly');
+      }
+
+      console.log('Using Razorpay Key ID:', this.KEY_ID);
+
       // Load Razorpay script
+      console.log('Loading Razorpay script...');
       const scriptLoaded = await this.loadRazorpayScript();
       if (!scriptLoaded) {
-        throw new Error('Failed to load Razorpay script');
+        throw new Error('Failed to load Razorpay script. Please check your internet connection.');
       }
+
+      // Verify Razorpay is available
+      if (!window.Razorpay) {
+        throw new Error('Razorpay is not available. Script may not have loaded properly.');
+      }
+
+      console.log('Razorpay script loaded, creating order...');
 
       // Create order
       const order = await this.createOrder({
@@ -96,6 +136,8 @@ export class RazorpayService {
           customer_email: userData.email
         }
       });
+
+      console.log('Order created, setting up Razorpay options...');
 
       // Razorpay options
       const options: RazorpayOptions = {
@@ -123,6 +165,8 @@ export class RazorpayService {
         }
       };
 
+      console.log('Creating Razorpay instance with options:', options);
+
       // Create Razorpay instance and open
       const rzp = new window.Razorpay(options);
       
@@ -131,7 +175,9 @@ export class RazorpayService {
         onError(response.error);
       });
 
+      console.log('Opening Razorpay payment modal...');
       rzp.open();
+      
     } catch (error) {
       console.error('Error initiating payment:', error);
       onError(error);
