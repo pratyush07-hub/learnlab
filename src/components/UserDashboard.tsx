@@ -31,7 +31,10 @@ import {
 
 import { AuthService } from '@/services/auth';
 import { UserService, SessionService, MessageService, FileService } from '@/services/data';
-import { Profile, Session as SessionType, Message as MessageType, FileRecord } from '@/lib/supabase';
+import { ProgramService } from '@/services/programs';
+import { RazorpayService } from '@/services/razorpay';
+import { EnrollmentService } from '@/services/enrollment';
+import { Profile, Session as SessionType, Message as MessageType, FileRecord, Program } from '@/lib/supabase';
 
 interface UserDashboardProps {
   user: {
@@ -58,9 +61,14 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [files, setFiles] = useState<FileRecord[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedMentor, setSelectedMentor] = useState<Profile | null>(null);
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('all');
+  const [selectedLevel, setSelectedLevel] = useState('all');
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [bookingData, setBookingData] = useState<BookingData>({
     mentorId: '',
     subject: '',
@@ -86,6 +94,12 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
       const mentorsResult = await UserService.getMentors();
       if (mentorsResult.data) {
         setMentors(mentorsResult.data);
+      }
+
+      // Load programs
+      const programsResult = await ProgramService.getAllPrograms();
+      if (programsResult.data) {
+        setPrograms(programsResult.data.filter(p => p.is_active));
       }
 
       // Load user sessions
@@ -182,6 +196,73 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
     } catch (err) {
       setError('Failed to send message');
       console.error('Error sending message:', err);
+    }
+  };
+
+  const handlePurchaseProgram = async () => {
+    if (!selectedProgram) return;
+
+    // Check if already enrolled
+    const enrollmentCheck = await EnrollmentService.checkEnrollment(user.id, selectedProgram.id);
+    if (enrollmentCheck.data) {
+      setError('You are already enrolled in this program!');
+      return;
+    }
+
+    setPurchaseLoading(true);
+    try {
+      await RazorpayService.initiatePayment(
+        selectedProgram.price || 0,
+        `Enrollment in ${selectedProgram.title}`,
+        {
+          name: user.name,
+          email: user.email
+        },
+        async (response) => {
+          // Payment successful
+          console.log('Payment successful:', response);
+          
+          // Verify payment
+          const isVerified = await RazorpayService.verifyPayment(response);
+          
+          if (isVerified) {
+            // Create enrollment record
+            const enrollmentResult = await EnrollmentService.createEnrollment({
+              studentId: user.id,
+              programId: selectedProgram.id,
+              paymentId: response.razorpay_payment_id,
+              amountPaid: selectedProgram.price || 0,
+              paymentStatus: 'completed',
+              notes: `Enrollment via Razorpay payment ${response.razorpay_payment_id}`
+            });
+
+            if (enrollmentResult.error) {
+              console.error('Error creating enrollment:', enrollmentResult.error);
+              setError('Payment successful but failed to create enrollment. Please contact support.');
+            } else {
+              setError('');
+              alert(`Successfully enrolled in ${selectedProgram.title}! You can now access your program from the dashboard.`);
+              setShowPurchaseModal(false);
+              setSelectedProgram(null);
+              
+              // Refresh data to show new enrollment
+              loadData();
+            }
+          } else {
+            setError('Payment verification failed. Please contact support.');
+          }
+        },
+        (error) => {
+          // Payment failed
+          console.error('Payment failed:', error);
+          setError(`Payment failed: ${error.description || 'Unknown error'}`);
+        }
+      );
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      setError('Failed to initiate payment. Please try again.');
+    } finally {
+      setPurchaseLoading(false);
     }
   };
 
@@ -287,6 +368,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
             {[
               { id: 'overview', label: 'Overview', icon: TrendingUp },
               { id: 'mentors', label: 'Find Mentors', icon: Users },
+              { id: 'programs', label: 'Programs', icon: BookOpen },
               { id: 'sessions', label: 'My Sessions', icon: Calendar },
               { id: 'messages', label: 'Messages', icon: MessageCircle },
               { id: 'files', label: 'Files', icon: FileText }
@@ -642,6 +724,133 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
             </motion.div>
           )}
 
+          {/* Programs Tab */}
+          {activeTab === 'programs' && (
+            <motion.div
+              key="programs"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Filters */}
+              <div className="premium-card p-6 rounded-2xl">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search programs..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <select
+                      value={selectedLevel}
+                      onChange={(e) => setSelectedLevel(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    >
+                      <option value="all">All Levels</option>
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                    <select
+                      value={selectedSubject}
+                      onChange={(e) => setSelectedSubject(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    >
+                      <option value="all">All Subjects</option>
+                      {Array.from(new Set(programs.flatMap(p => p.subjects || []))).map(subject => (
+                        <option key={subject} value={subject}>{subject}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Programs Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {programs
+                  .filter(program => {
+                    const matchesSearch = program.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        program.description.toLowerCase().includes(searchTerm.toLowerCase());
+                    const matchesLevel = selectedLevel === 'all' || program.level === selectedLevel;
+                    const matchesSubject = selectedSubject === 'all' || 
+                                         (program.subjects && program.subjects.includes(selectedSubject));
+                    return matchesSearch && matchesLevel && matchesSubject;
+                  })
+                  .map((program) => (
+                    <motion.div
+                      key={program.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="premium-card p-6 rounded-2xl hover:shadow-lg transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-2">{program.title}</h3>
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-3">{program.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Clock size={14} className="mr-2" />
+                          {program.duration_weeks} weeks • {program.session_count} sessions
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <BookOpen size={14} className="mr-2" />
+                          Level: <span className="ml-1 px-2 py-1 bg-gray-100 rounded text-xs">{program.level}</span>
+                        </div>
+                        {program.subjects && program.subjects.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {program.subjects.slice(0, 3).map((subject, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded">
+                                {subject}
+                              </span>
+                            ))}
+                            {program.subjects.length > 3 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                +{program.subjects.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="text-lg font-bold text-gray-900">
+                          ₹{program.price?.toLocaleString('en-IN')}
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedProgram(program);
+                            setShowPurchaseModal(true);
+                          }}
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors text-sm font-medium"
+                        >
+                          Enroll Now
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+              </div>
+
+              {programs.length === 0 && (
+                <div className="text-center py-12">
+                  <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No programs available</h3>
+                  <p className="mt-1 text-sm text-gray-500">Check back soon for new learning programs</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {/* Files Tab */}
           {activeTab === 'files' && (
             <motion.div
@@ -791,6 +1000,86 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
               >
                 Book Session
               </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Purchase Modal */}
+      {selectedProgram && showPurchaseModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="premium-card p-6 rounded-2xl max-w-md w-full"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Enroll in Program</h3>
+              <button
+                onClick={() => {
+                  setShowPurchaseModal(false);
+                  setSelectedProgram(null);
+                }}
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">{selectedProgram.title}</h4>
+                <p className="text-sm text-gray-600 mb-3">{selectedProgram.description}</p>
+                
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Duration:</span>
+                    <span>{selectedProgram.duration_weeks} weeks</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sessions:</span>
+                    <span>{selectedProgram.session_count} sessions</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Level:</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded text-xs">{selectedProgram.level}</span>
+                  </div>
+                </div>
+
+                {selectedProgram.subjects && selectedProgram.subjects.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-600 mb-1">Subjects:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedProgram.subjects.map((subject, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded">
+                          {subject}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-lg font-medium text-gray-900">Total Amount:</span>
+                  <span className="text-xl font-bold text-gray-900">
+                    {RazorpayService.formatAmount(selectedProgram.price || 0)}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handlePurchaseProgram}
+                  disabled={purchaseLoading}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {purchaseLoading ? 'Processing...' : 'Pay Now'}
+                </button>
+
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Secure payment powered by Razorpay
+                </p>
+              </div>
             </div>
           </motion.div>
         </div>
