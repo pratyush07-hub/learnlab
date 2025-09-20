@@ -100,10 +100,11 @@ CREATE TABLE programs (
   price DECIMAL(10,2) NOT NULL CHECK (price >= 0), -- Price must be non-negative
   duration_weeks INTEGER NOT NULL CHECK (duration_weeks > 0 AND duration_weeks <= 104), -- 1-104 weeks (2 years max)
   session_count INTEGER NOT NULL CHECK (session_count > 0 AND session_count <= 1000), -- Reasonable session limit
-  mentor_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  mentor_id UUID REFERENCES profiles(id) ON DELETE SET NULL, -- Allow NULL for admin-created programs
   subjects TEXT[] NOT NULL CHECK (array_length(subjects, 1) > 0), -- At least one subject required
   level TEXT NOT NULL CHECK (level IN ('beginner', 'intermediate', 'advanced')),
   is_active BOOLEAN DEFAULT TRUE,
+  created_by TEXT DEFAULT 'admin', -- Track who created the program
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -226,16 +227,16 @@ CREATE POLICY "Users can view active programs" ON programs FOR SELECT USING (
   is_active = true
 );
 CREATE POLICY "Mentors can view their programs" ON programs FOR SELECT USING (
-  auth.uid() = mentor_id
+  auth.uid() = mentor_id OR mentor_id IS NULL
 );
 CREATE POLICY "Mentors can create programs" ON programs FOR INSERT WITH CHECK (
-  auth.uid() = mentor_id
+  auth.uid() = mentor_id OR mentor_id IS NULL
 );
 CREATE POLICY "Mentors can update their programs" ON programs FOR UPDATE USING (
-  auth.uid() = mentor_id
+  auth.uid() = mentor_id OR mentor_id IS NULL
 );
 CREATE POLICY "Mentors can delete their programs" ON programs FOR DELETE USING (
-  auth.uid() = mentor_id
+  auth.uid() = mentor_id OR mentor_id IS NULL
 );
 -- Admin bypass policy for programs (allows full access for administrative functions)
 CREATE POLICY "Admin full access to programs" ON programs FOR ALL USING (true) WITH CHECK (true);

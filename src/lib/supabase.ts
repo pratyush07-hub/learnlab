@@ -85,10 +85,11 @@ export interface Program {
   price: number
   duration_weeks: number
   session_count: number
-  mentor_id: string
+  mentor_id?: string // Made optional for admin-created programs
   subjects: string[]
   level: 'beginner' | 'intermediate' | 'advanced'
   is_active: boolean
+  created_by?: string
   created_at: string
   updated_at: string
   mentor?: Profile

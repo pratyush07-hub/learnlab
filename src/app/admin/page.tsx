@@ -5,6 +5,7 @@ import { AuthService } from '@/services/auth'
 import { UserService, SessionService } from '@/services/data'
 import { ProgramService } from '@/services/programs'
 import { Profile, Session, Program } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function AdminDashboard() {
@@ -155,6 +156,19 @@ export default function AdminDashboard() {
 
   const loadDashboardData = async () => {
     try {
+      // Test Supabase connection
+      console.log('Testing Supabase connection...')
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('id')
+        .limit(1)
+      
+      if (testError) {
+        console.error('Supabase connection error:', testError)
+      } else {
+        console.log('Supabase connection successful')
+      }
+
       const [usersResult, sessionsResult, programsResult] = await Promise.all([
         UserService.getAllUsers(),
         SessionService.getAllSessions(),
@@ -414,8 +428,11 @@ export default function AdminDashboard() {
       const programData = {
         ...programForm,
         subjects: programForm.subjects.filter(s => s.trim() !== ''),
-        mentor_id: 'admin' // Programs created by admin can be used by all mentors
+        mentor_id: undefined, // Programs created by admin have no specific mentor
+        created_by: 'admin'
       }
+
+      console.log('Creating program with data:', programData);
 
       let result
       if (selectedProgram) {
@@ -424,16 +441,22 @@ export default function AdminDashboard() {
         result = await ProgramService.createProgram(programData)
       }
 
+      console.log('Program creation result:', result);
+
       if (result.error) {
+        console.error('Program creation/update error:', result.error);
         showNotification('error', `Failed to ${selectedProgram ? 'update' : 'create'} program: ${result.error.message}`)
       } else {
+        console.log('Program created successfully:', result.data);
         // Reload programs data
         const programsResult = await ProgramService.getAllPrograms()
+        console.log('Reloaded programs:', programsResult);
         setPrograms(programsResult.data || [])
         setShowProgramModal(false)
         showNotification('success', `Program ${selectedProgram ? 'updated' : 'created'} successfully!`)
       }
     } catch (error) {
+      console.error('Unexpected error in handleSaveProgram:', error);
       showNotification('error', `Failed to ${selectedProgram ? 'update' : 'create'} program`)
     }
     setFormLoading(false)

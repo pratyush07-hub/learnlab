@@ -78,13 +78,20 @@ export class ProgramService {
   // Create program
   static async createProgram(programData: Omit<Program, 'id' | 'created_at' | 'updated_at'>): Promise<{ data?: Program, error?: Error | null }> {
     try {
-      const { data, error } = await supabase
-        .from('programs')
-        .insert({
+      // Clean the program data to remove undefined values
+      const cleanProgramData = Object.fromEntries(
+        Object.entries({
           ...programData,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
+        }).filter(([_, value]) => value !== undefined)
+      );
+
+      console.log('Cleaned program data for Supabase:', cleanProgramData);
+
+      const { data, error } = await supabase
+        .from('programs')
+        .insert(cleanProgramData)
         .select(`
           *,
           mentor:profiles!programs_mentor_id_fkey (*)
@@ -92,29 +99,20 @@ export class ProgramService {
         .single()
 
       if (error) {
-        console.error('Error creating program in database:', error);
-        // Return mock data for development if database fails
-        return { 
-          data: {
-            id: `mock-program-${Date.now()}`,
-            ...programData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            mentor: {
-              id: programData.mentor_id,
-              email: 'admin@skillorbitx.com',
-              name: 'Admin User',
-              user_type: 'mentor' as const,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          } as Program
-        }
+        console.error('Supabase error creating program:', {
+          error,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        return { error: error as Error }
       }
 
+      console.log('Program created successfully in Supabase:', data);
       return { data }
     } catch (error) {
-      console.error('Error creating program:', error);
+      console.error('Unexpected error creating program:', error);
       return { error: error as Error }
     }
   }
