@@ -144,3 +144,17 @@ export const updateUserProfile = async (userId: string, updates: any) => {
   
   return { data, error }
 }
+// Fetch all mentors
+export const getAllMentors = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_type', 'mentor')
+
+  if (error) {
+    console.error('Error fetching mentors:', error)
+    return { data: [], error }
+  }
+
+  return { data, error: null }
+}
