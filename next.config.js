@@ -42,9 +42,19 @@ const nextConfig = {
               value: 'max-age=31536000; includeSubDomains',
             },
             {
-              key: 'Content-Security-Policy',
-              value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com; style-src 'self' 'unsafe-inline' https://checkout.razorpay.com; img-src 'self' data: blob: https: https://*.razorpay.com; font-src 'self' data: https://checkout.razorpay.com; connect-src 'self' https://tepysveqbchnyjkeyjnh.supabase.co https://api.razorpay.com https://*.razorpay.com; frame-src 'self' https://api.razorpay.com https://*.razorpay.com; child-src 'self' https://api.razorpay.com;",
-            }
+  key: 'Content-Security-Policy',
+  value: `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://*.razorpay.com;
+    style-src 'self' 'unsafe-inline' https://checkout.razorpay.com;
+    img-src 'self' data: blob: https: https://*.razorpay.com;
+    font-src 'self' data: https://checkout.razorpay.com;
+    connect-src 'self' https://hhhmmzhxkwommdgebwna.supabase.co https://tepysveqbchnyjkeyjnh.supabase.co https://api.razorpay.com https://*.razorpay.com;
+    frame-src 'self' https://api.razorpay.com https://*.razorpay.com;
+    child-src 'self' https://api.razorpay.com;
+  `.replace(/\s{2,}/g, ' '), // optional formatting
+}
+
           ] : []),
         ],
       },
