@@ -22,7 +22,8 @@ export default function MentorsPage() {
   useEffect(() => {
     const fetchMentors = async () => {
       setLoading(true)
-      const { data, error } = await getAllMentors()
+      const { data, error } = await getAllMentors();
+      console.log(data);
 
       if (error) {
         console.error('Error fetching mentors:', error)
