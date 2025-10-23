@@ -7,7 +7,8 @@ import { ProgramService } from '@/services/programs'
 import { Profile, Session, Program } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-
+import { CourseService } from '@/services/courses';
+import { X } from 'lucide-react';
 export default function AdminDashboard() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -16,6 +17,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<Profile[]>([])
   const [sessions, setSessions] = useState<Session[]>([])
   const [programs, setPrograms] = useState<Program[]>([])
+  const [courses, setCourses] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedUserType, setSelectedUserType] = useState<'all' | 'student' | 'mentor'>('all')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'scheduled' | 'completed' | 'cancelled'>('all')
@@ -73,6 +75,88 @@ export default function AdminDashboard() {
     level: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
     is_active: true
   })
+  type Level = 'beginner' | 'intermediate' | 'advanced';
+
+  interface ProgramForm {
+  title: string;
+  description: string;
+  price: number;
+  duration_weeks: number;
+  session_count: number;
+  subjects: string[];
+  level: Level;
+  }
+   const [form, setForm] = useState<ProgramForm>({
+    title: '',
+    description: '',
+    price: 0,
+    duration_weeks: 4,
+    session_count: 8,
+    subjects: [''],
+    level: 'beginner'
+  });
+  const [creatingProgram, setCreatingProgram] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<string | null>(null);
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // First check Supabase connection
+      const { error: healthCheck } = await supabase.from('profiles').select('count').limit(1);
+      if (healthCheck) {
+        throw new Error(`Supabase connection error: ${healthCheck.message}`);
+      }
+
+      const [usersData, sessionsData, programsData, coursesData] = await Promise.all([
+        UserService.getAllUsers(),
+        SessionService.getAllSessions(),
+        ProgramService.getAllPrograms(),
+        CourseService.getAllCourses()
+      ]);
+
+      if (usersData.error) throw new Error(`Users data error: ${usersData.error.message}`);
+      if (sessionsData.error) throw new Error(`Sessions data error: ${sessionsData.error.message}`);
+      if (programsData.error) throw new Error(`Programs data error: ${programsData.error.message}`);
+      if (coursesData.error) throw new Error(`Courses data error: ${coursesData.error.message}`);
+
+      console.log('Loaded courses data:', coursesData); // Debug log
+
+      if (usersData.data) setUsers(usersData.data);
+      if (sessionsData.data) setSessions(sessionsData.data);
+      if (programsData.data) setPrograms(programsData.data);
+      if (coursesData.data) {
+        console.log('Setting courses state:', coursesData.data); // Debug log
+        setCourses(coursesData.data);
+      } else {
+        console.log('No courses data available'); // Debug log
+        setCourses([]);
+      }
+      setIsLoading(false);
+    } catch (error: any) {
+      console.error('Error loading data:', error);
+      setNotification({ 
+        type: 'error', 
+        message: error.message || 'Failed to load data. Please check your connection and try again.' 
+      });
+      setIsLoading(false);
+    }
+  };
+  const loadCourses = async () => {
+    try {
+      const { data, error } = await CourseService.getAllCourses();
+      if (error) {
+        console.error('Error loading courses:', error);
+        setNotification({
+          type: 'error',
+          message: 'Failed to load courses: ' + error.message
+        });
+      } else if (data) {
+        console.log('Setting courses:', data);
+        setCourses(data);
+      }
+    } catch (err) {
+      console.error('Error in loadCourses:', err);
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -94,11 +178,50 @@ export default function AdminDashboard() {
       setCurrentUser(user)
       setShowLogin(false)
       await loadDashboardData()
+      await loadCourses() // Load courses after auth
       setIsLoading(false)
     }
 
     checkAuth()
   }, [router])
+
+  // Add effect to reload courses when tab changes to overview
+  useEffect(() => {
+    if (activeTab === 'overview' && currentUser) {
+      loadCourses()
+    }
+  }, [activeTab, currentUser])
+
+  const handleEditCourse = (course: any) => {
+    setActiveTab('addCourse');
+    setEditingCourse(course.title); // Store the original title for updating
+    setForm({
+      title: course.title,
+      description: course.description,
+      price: course.price,
+      duration_weeks: course.duration_weeks,
+      session_count: course.session_count,
+      subjects: course.subjects || [''],
+      level: course.level
+    });
+  };
+
+  const handleDeleteCourse = async (course: any) => {
+    if (window.confirm('Are you sure you want to delete this course?')) {
+      try {
+        const { error } = await CourseService.deleteCourse(course.title);
+        if (error) {
+          alert('Error deleting course: ' + error.message);
+        } else {
+          alert('Course deleted successfully');
+          loadData();
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to delete course');
+      }
+    }
+  };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -505,7 +628,63 @@ export default function AdminDashboard() {
       subjects: newSubjects
     })
   }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (name === 'level') setForm({ ...form, level: value as Level });
+    else if (['price', 'duration_weeks', 'session_count'].includes(name)) setForm({ ...form, [name]: Number(value) });
+    else setForm({ ...form, [name]: value });
+  };
+  const handleSubjectChange = (i: number, value: string) => {
+    const updated = [...form.subjects];
+    updated[i] = value;
+    setForm({ ...form, subjects: updated });
+  };
+  const addSubjectFieldCourse = () => setForm({ ...form, subjects: [...form.subjects, ''] });
+  const removeSubjectFieldCourse = (i: number) => setForm({ ...form, subjects: form.subjects.filter((_, idx) => idx !== i) });
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingProgram(true);
+    try {
+      const payload = {
+        ...form,
+        subjects: form.subjects.filter(s => s.trim() !== ''),
+      };
+      
+      let error;
+      if (editingCourse) {
+        // If we're editing, use updateCourse
+        const result = await CourseService.updateCourse(editingCourse, payload);
+        error = result.error;
+      } else {
+        // If we're creating new, use createCourse
+        const result = await CourseService.createCourse(payload);
+        error = result.error;
+      }
+
+      if (error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert(editingCourse ? 'Course updated successfully!' : 'Course created successfully!');
+        setActiveTab('overview');
+        setEditingCourse(null); // Clear editing state
+        setForm({ // Reset form
+          title: '',
+          description: '',
+          price: 0,
+          duration_weeks: 4,
+          session_count: 8,
+          subjects: [''],
+          level: 'beginner'
+        });
+        loadData();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong.');
+    }
+    setCreatingProgram(false);
+  };
   const handleLogout = async () => {
     await AuthService.signOut()
     router.push('/')
@@ -627,12 +806,19 @@ export default function AdminDashboard() {
                 { id: 'users', name: 'Users', icon: '' },
                 { id: 'sessions', name: 'Sessions', icon: '' },
                 { id: 'programs', name: 'Programs', icon: '' },
+                { id: 'courses', name: 'Courses', icon: '' },
+                { id: 'addCourse', name: 'Add Course', icon: '' },
                 { id: 'analytics', name: 'Analytics', icon: '' },
                 { id: 'settings', name: 'Settings', icon: '' }
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === 'overview') {
+                      loadCourses();
+                    }
+                  }}
                   className={`py-4 px-6 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.id
                       ? 'border-amber-500 text-amber-600'
@@ -1342,7 +1528,423 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+        {activeTab === 'courses' && (
+          <div>
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <input
+                    type="text"
+                    placeholder="Search courses..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                </div>
+                <button 
+                  onClick={() => setActiveTab('addCourse')}
+                  className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors"
+                >
+                  Add Course
+                </button>
+              </div>
+            </div>
 
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sessions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {courses
+                      .filter(course => 
+                        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        course.subjects?.some(subject => 
+                          subject.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                      )
+                      .map((course) => (
+                        <tr key={course.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{course.title}</div>
+                              <div className="text-sm text-gray-500">{course.description?.substring(0, 50)}...</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {course.subjects?.join(', ')}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              course.level === 'beginner' ? 'bg-green-100 text-green-800' :
+                              course.level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {course.level}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {course.duration_weeks} weeks
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {course.session_count} sessions
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            ₹{course.price.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button 
+                              onClick={() => handleEditCourse(course)}
+                              className="text-amber-600 hover:text-amber-900"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteCourse(course)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+        {activeTab === 'addCourse' && (
+            <div className="max-w-3xl mx-auto">
+              <form className="bg-white p-6 rounded-xl shadow space-y-4" onSubmit={handleSubmit}>
+                <div>
+                  <label className="block mb-1 font-medium">Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg p-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-medium">Description</label>
+                  <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg p-2"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1 font-medium">Price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-gray-500">₹</span>
+                      <input
+                        type="text"
+                        name="price"
+                        value={form.price}
+                        onChange={(e) => {
+                          // Only allow numbers and format with commas
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          const formattedValue = value ? parseInt(value) : 0;
+                          setForm({
+                            ...form,
+                            price: formattedValue
+                          });
+                        }}
+                        className="w-full border rounded-lg p-2 pl-7"
+                        placeholder="0"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-1 font-medium">Duration (weeks)</label>
+                    <input
+                      type="number"
+                      name="duration_weeks"
+                      value={form.duration_weeks}
+                      onChange={handleChange}
+                      className="w-full border rounded-lg p-2"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1 font-medium">Number of Sessions</label>
+                    <input
+                      type="number"
+                      name="session_count"
+                      value={form.session_count}
+                      onChange={handleChange}
+                      className="w-full border rounded-lg p-2"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1 font-medium">Level</label>
+                    <select name="level" value={form.level} onChange={handleChange} className="w-full border rounded-lg p-2">
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-medium">Subjects</label>
+                  {form.subjects.map((subj, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={subj}
+                        onChange={e => handleSubjectChange(idx, e.target.value)}
+                        className="flex-1 border rounded-lg p-2"
+                        required
+                      />
+                      <button type="button" onClick={() => removeSubjectField(idx)} className="text-red-500">
+                        <X size={20} />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addSubjectField} className="px-3 py-1 bg-green-600 text-white rounded-lg">
+                    Add Subject
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={creatingProgram}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-700 text-white font-semibold hover:from-amber-600 hover:to-amber-800 transition shadow-lg"
+                >
+                  {creatingProgram ? 'Creating...' : 'Create Program'}
+                </button>
+              </form>
+            </div>
+          )}
+          {activeTab === 'analytics' && (
+          <div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="text-2xl mr-3">💰</div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                    <p className="text-2xl font-bold text-green-600">₹{stats.totalEarnings.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">+12% from last month</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="text-2xl mr-3">⭐</div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Avg Rating</p>
+                    <p className="text-2xl font-bold text-amber-600">{stats.avgRating.toFixed(1)}/5</p>
+                    <p className="text-xs text-gray-500">Across all mentors</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="text-2xl mr-3">📈</div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Growth Rate</p>
+                    <p className="text-2xl font-bold text-blue-600">+23%</p>
+                    <p className="text-xs text-gray-500">New users this month</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center">
+                  <div className="text-2xl mr-3">🎯</div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Success Rate</p>
+                    <p className="text-2xl font-bold text-purple-600">{Math.round((stats.completedSessions / stats.totalSessions) * 100) || 0}%</p>
+                    <p className="text-xs text-gray-500">Session completion</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">User Distribution</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Students</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${(stats.totalStudents / stats.totalUsers) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-900">{stats.totalStudents}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Mentors</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full" 
+                          style={{ width: `${(stats.totalMentors / stats.totalUsers) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-900">{stats.totalMentors}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Status</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Completed</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                        <div 
+                          className="bg-green-600 h-2 rounded-full" 
+                          style={{ width: `${(stats.completedSessions / stats.totalSessions) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-900">{stats.completedSessions}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Scheduled</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${(stats.scheduledSessions / stats.totalSessions) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-900">{stats.scheduledSessions}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">Cancelled</span>
+                    <div className="flex items-center">
+                      <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                        <div 
+                          className="bg-red-600 h-2 rounded-full" 
+                          style={{ width: `${((stats.totalSessions - stats.completedSessions - stats.scheduledSessions) / stats.totalSessions) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-900">{stats.totalSessions - stats.completedSessions - stats.scheduledSessions}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Mentors</h3>
+                <div className="space-y-3">
+                  {users
+                    .filter(u => u.user_type === 'mentor')
+                    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+                    .slice(0, 5)
+                    .map((mentor, index) => (
+                      <div key={mentor.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-green-600 font-semibold">{mentor.name.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{mentor.name}</p>
+                            <p className="text-sm text-gray-500">{mentor.subjects?.join(', ')}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-gray-900">⭐ {mentor.rating || 'N/A'}</p>
+                          <p className="text-sm text-gray-500">{mentor.total_sessions || 0} sessions</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Popular Subjects</h3>
+                <div className="space-y-3">
+                  {sessions
+                    .reduce((acc: { [key: string]: number }, session) => {
+                      acc[session.subject] = (acc[session.subject] || 0) + 1
+                      return acc
+                    }, {})
+                    && Object.entries(
+                      sessions.reduce((acc: { [key: string]: number }, session) => {
+                        acc[session.subject] = (acc[session.subject] || 0) + 1
+                        return acc
+                      }, {})
+                    )
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5)
+                    .map(([subject, count], index) => (
+                      <div key={subject} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-amber-600 font-semibold">{index + 1}</span>
+                          </div>
+                          <span className="font-medium text-gray-900">{subject}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-20 bg-gray-200 rounded-full h-2 mr-3">
+                            <div 
+                              className="bg-amber-600 h-2 rounded-full" 
+                              style={{ width: `${(count / sessions.length) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-900">{count}</span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity Timeline</h3>
+              <div className="space-y-4">
+                {users.slice(0, 10).map((user, index) => (
+                  <div key={user.id} className="flex items-start">
+                    <div className="flex-shrink-0 w-2 h-2 bg-amber-600 rounded-full mt-2"></div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-900">
+                        New {user.user_type} registered: {user.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(user.created_at).toLocaleDateString()} at {new Date(user.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab === 'settings' && (
           <div className="space-y-8">
             <div className="bg-white rounded-lg shadow-sm p-6">

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CourseService } from '@/services/courses';
 import { 
   Calendar, 
   Users, 
@@ -35,17 +34,6 @@ interface MentorDashboardProps {
   mentor: Profile;
   onLogout: () => void;
 }
-type Level = 'beginner' | 'intermediate' | 'advanced';
-
-interface ProgramForm {
-  title: string;
-  description: string;
-  price: number;
-  duration_weeks: number;
-  session_count: number;
-  subjects: string[];
-  level: Level;
-}
 export default function MentorDashboard({ mentor, onLogout }: MentorDashboardProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [students, setStudents] = useState<Profile[]>([]);
@@ -57,20 +45,10 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
   const [error, setError] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  const [form, setForm] = useState<ProgramForm>({
-    title: '',
-    description: '',
-    price: 0,
-    duration_weeks: 4,
-    session_count: 8,
-    subjects: [''],
-    level: 'beginner'
-  });
   // Load data on component mount
   useEffect(() => {
     loadData();
   }, []);
-  const [creatingProgram, setCreatingProgram] = useState(false);
   const loadData = async () => {
     setLoading(true);
     try {
@@ -189,43 +167,6 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
       onLogout(); // Sign out anyway
     }
   };
-   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === 'level') setForm({ ...form, level: value as Level });
-    else if (['price', 'duration_weeks', 'session_count'].includes(name)) setForm({ ...form, [name]: Number(value) });
-    else setForm({ ...form, [name]: value });
-  };
-
-  const handleSubjectChange = (i: number, value: string) => {
-    const updated = [...form.subjects];
-    updated[i] = value;
-    setForm({ ...form, subjects: updated });
-  };
-
-  const addSubjectField = () => setForm({ ...form, subjects: [...form.subjects, ''] });
-  const removeSubjectField = (i: number) => setForm({ ...form, subjects: form.subjects.filter((_, idx) => idx !== i) });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreatingProgram(true);
-    try {
-      const payload = {
-        ...form,
-        subjects: form.subjects.filter(s => s.trim() !== ''),
-      };
-      const { error } = await CourseService.createCourse(payload);
-      if (error) alert('Error: ' + error.message);
-      else {
-        alert('Program created successfully!');
-        setActiveTab('overview');
-        loadData();
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Something went wrong.');
-    }
-    setCreatingProgram(false);
-  };
   // Calculate statistics
   const totalEarnings = earnings.reduce((sum, earning) => sum + earning.amount, 0);
   const pendingEarnings = earnings.filter(e => e.status === 'pending').reduce((sum, earning) => sum + earning.amount, 0);
@@ -292,7 +233,6 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
               { id: 'earnings', label: 'Earnings', icon: DollarSign },
               { id: 'availability', label: 'Availability', icon: Clock },
               { id: 'files', label: 'Files', icon: FileText },
-              { id: 'addCourse', label: 'Add Course', icon: Plus },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -820,110 +760,6 @@ export default function MentorDashboard({ mentor, onLogout }: MentorDashboardPro
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-          {activeTab === 'addCourse' && (
-            <motion.div key="addCourse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <form className="bg-white p-6 rounded-xl shadow space-y-4" onSubmit={handleSubmit}>
-                <div>
-                  <label className="block mb-1 font-medium">Title</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1 font-medium">Description</label>
-                  <textarea
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-2"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1 font-medium">Price</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={form.price}
-                      onChange={handleChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 font-medium">Duration (weeks)</label>
-                    <input
-                      type="number"
-                      name="duration_weeks"
-                      value={form.duration_weeks}
-                      onChange={handleChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1 font-medium">Number of Sessions</label>
-                    <input
-                      type="number"
-                      name="session_count"
-                      value={form.session_count}
-                      onChange={handleChange}
-                      className="w-full border rounded-lg p-2"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 font-medium">Level</label>
-                    <select name="level" value={form.level} onChange={handleChange} className="w-full border rounded-lg p-2">
-                      <option value="beginner">Beginner</option>
-                      <option value="intermediate">Intermediate</option>
-                      <option value="advanced">Advanced</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block mb-1 font-medium">Subjects</label>
-                  {form.subjects.map((subj, idx) => (
-                    <div key={idx} className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={subj}
-                        onChange={e => handleSubjectChange(idx, e.target.value)}
-                        className="flex-1 border rounded-lg p-2"
-                        required
-                      />
-                      <button type="button" onClick={() => removeSubjectField(idx)} className="text-red-500">
-                        <X size={20} />
-                      </button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={addSubjectField} className="px-3 py-1 bg-green-600 text-white rounded-lg">
-                    Add Subject
-                  </button>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={creatingProgram}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-700 text-white font-semibold hover:from-amber-600 hover:to-amber-800 transition shadow-lg"
-                >
-                  {creatingProgram ? 'Creating...' : 'Create Program'}
-                </button>
-              </form>
             </motion.div>
           )}
         </AnimatePresence>
