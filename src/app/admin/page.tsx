@@ -80,18 +80,19 @@ export default function AdminDashboard() {
   interface ProgramForm {
   title: string;
   description: string;
-  price: number;
-  duration_weeks: number;
-  session_count: number;
+  // keep as string in the form to avoid input caret/formatting issues; convert on submit
+  price: string | number;
+  duration_weeks: string | number;
+  session_count: string | number;
   subjects: string[];
   level: Level;
   }
    const [form, setForm] = useState<ProgramForm>({
     title: '',
     description: '',
-    price: 0,
-    duration_weeks: 4,
-    session_count: 8,
+    price: '0',
+    duration_weeks: '4',
+    session_count: '8',
     subjects: [''],
     level: 'beginner'
   });
@@ -631,7 +632,8 @@ export default function AdminDashboard() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'level') setForm({ ...form, level: value as Level });
-    else if (['price', 'duration_weeks', 'session_count'].includes(name)) setForm({ ...form, [name]: Number(value) });
+    // keep numeric fields as strings in the form to avoid erasing/formatting issues
+    else if (['price', 'duration_weeks', 'session_count'].includes(name)) setForm({ ...form, [name]: value });
     else setForm({ ...form, [name]: value });
   };
   const handleSubjectChange = (i: number, value: string) => {
@@ -649,6 +651,9 @@ export default function AdminDashboard() {
       const payload = {
         ...form,
         subjects: form.subjects.filter(s => s.trim() !== ''),
+        price: Number(form.price) || 0,
+        duration_weeks: Number(form.duration_weeks) || 0,
+        session_count: Number(form.session_count) || 0,
       };
       
       let error;
@@ -671,9 +676,9 @@ export default function AdminDashboard() {
         setForm({ // Reset form
           title: '',
           description: '',
-          price: 0,
-          duration_weeks: 4,
-          session_count: 8,
+          price: '0',
+          duration_weeks: '4',
+          session_count: '8',
           subjects: [''],
           level: 'beginner'
         });
@@ -1657,14 +1662,13 @@ export default function AdminDashboard() {
                       <input
                         type="text"
                         name="price"
-                        value={form.price}
+                        value={String(form.price)}
                         onChange={(e) => {
-                          // Only allow numbers and format with commas
+                          // allow only digits in the stored string
                           const value = e.target.value.replace(/[^0-9]/g, '');
-                          const formattedValue = value ? parseInt(value) : 0;
                           setForm({
                             ...form,
-                            price: formattedValue
+                            price: value
                           });
                         }}
                         className="w-full border rounded-lg p-2 pl-7"
@@ -1676,9 +1680,9 @@ export default function AdminDashboard() {
                   <div>
                     <label className="block mb-1 font-medium">Duration (weeks)</label>
                     <input
-                      type="number"
+                      type="text"
                       name="duration_weeks"
-                      value={form.duration_weeks}
+                      value={String(form.duration_weeks)}
                       onChange={handleChange}
                       className="w-full border rounded-lg p-2"
                       required
@@ -1690,9 +1694,9 @@ export default function AdminDashboard() {
                   <div>
                     <label className="block mb-1 font-medium">Number of Sessions</label>
                     <input
-                      type="number"
+                      type="text"
                       name="session_count"
-                      value={form.session_count}
+                      value={String(form.session_count)}
                       onChange={handleChange}
                       className="w-full border rounded-lg p-2"
                       required
@@ -1719,12 +1723,12 @@ export default function AdminDashboard() {
                         className="flex-1 border rounded-lg p-2"
                         required
                       />
-                      <button type="button" onClick={() => removeSubjectField(idx)} className="text-red-500">
+                      <button type="button" onClick={() => removeSubjectFieldCourse(idx)} className="text-red-500">
                         <X size={20} />
                       </button>
                     </div>
                   ))}
-                  <button type="button" onClick={addSubjectField} className="px-3 py-1 bg-green-600 text-white rounded-lg">
+                  <button type="button" onClick={addSubjectFieldCourse} className="px-3 py-1 bg-green-600 text-white rounded-lg">
                     Add Subject
                   </button>
                 </div>
