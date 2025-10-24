@@ -1573,7 +1573,7 @@ export default function AdminDashboard() {
                       .filter(course => 
                         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        course.subjects?.some(subject => 
+                        course.subjects?.some((subject : string) => 
                           subject.toLowerCase().includes(searchTerm.toLowerCase())
                         )
                       )
